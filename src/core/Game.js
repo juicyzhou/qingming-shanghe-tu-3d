@@ -37,9 +37,10 @@ export class Game {
     this.scene.add(sun);
     this.scene.add(new THREE.HemisphereLight('#fff6e0', '#b7a080', 0.55));
 
-    // ---- 后处理（触屏设备跳过描边以提升帧率） ----
+    // ---- 后处理（触屏设备跳过描边以提升帧率；nocomposer 直接渲染用于诊断） ----
     const qp = new URLSearchParams(location.search);
-    this.composer = createComposer(renderer, this.scene, this.camera, { outline: qp.get('simple') !== '1' && !touch });
+    this.composer = qp.get('nocomposer') === '1' ? null :
+      createComposer(renderer, this.scene, this.camera, { outline: qp.get('simple') !== '1' && !touch });
 
     // ---- 系统 ----
     this.input = new Input(this.canvas);
@@ -109,7 +110,8 @@ export class Game {
     const dt = Math.min(this._clock.getDelta(), 0.05);
     this._t += dt;
     this.update(dt);
-    this.composer.render();
+    if (this.composer) this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
     this.input.endFrame();
   }
 

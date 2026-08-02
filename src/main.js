@@ -37,6 +37,15 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g._running = false;
       return;
     }
+    if (TEST_PARAMS.get('nan') === '1') {
+      g.start();
+      const div = document.createElement('div');
+      div.id = 'probe-report';
+      div.textContent = window.__nanScan(g);
+      document.body.appendChild(div);
+      g._running = false;
+      return;
+    }
     // 先设自由相机，再启动 → 首帧即目标取景（截图/探针用）
     const view = TEST_PARAMS.get('view') || 'aerial';
     if (TEST_PARAMS.get('t')) g._t = parseFloat(TEST_PARAMS.get('t')); // 设定动画相位
@@ -222,6 +231,57 @@ window.__selftest = (g) => {
   return out.join(' | ');
 };
 
+window.__nanScan = (g) => {
+  const out = [];
+  let bad = 0;
+  const offenders = [];
+  g.scene.traverse((o) => {
+    if (!o.isMesh || !o.geometry) return;
+    const pos = o.geometry.attributes.position;
+    if (!pos) return;
+    const arr = pos.array;
+    let hasBad = false, minV = 1e9, maxV = -1e9;
+    for (let i = 0; i < arr.length; i++) {
+      const v = arr[i];
+      if (!Number.isFinite(v)) { hasBad = true; break; }
+      if (v < minV) minV = v; if (v > maxV) maxV = v;
+    }
+    if (hasBad) {
+      bad++;
+      let kind = '?';
+      let p = o.parent;
+      let chain = '';
+      while (p && p !== g.scene) { chain = '>' + (p.userData?.stallId || p.userData?.buildingId || p.userData?.boat ? 'obj' : p.type) + chain; p = p.parent; }
+      offenders.push(`${o.geometry.type} parentChain=${chain} verts=${pos.count}`);
+    } else if (maxV > 500 || maxV < -500) {
+      // 超大坐标（可能来自坏变换）
+      offenders.push(`HUGE ${o.geometry.type} parent=${o.parent?.type} maxV=${Math.round(maxV)}`);
+    }
+  });
+  out.push('badVerts=' + bad);
+  out.push('offenders=' + (offenders.length ? offenders.join(' ; ') : 'NONE'));
+  // matrixWorld / 挂载异常
+  const broken = [];
+  g.scene.traverse((o) => {
+    if (o.isMesh && (!o.matrixWorld || !o.parent)) {
+      broken.push(`${o.type} mw=${!!o.matrixWorld} parent=${o.parent ? o.parent.type : 'null'} geo=${o.geometry?.type}`);
+    }
+  });
+  out.push('broken=' + (broken.length ? broken.join(' ; ') : 'NONE'));
+  // 也检查材质
+  let badMat = 0;
+  g.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    const m = o.material;
+    if (!m) { badMat++; out.push('noMat:' + (o.parent?.type)); }
+    else if (m.uniforms && m.uniforms.uMap && m.uniforms.uMap.value && m.uniforms.uMap.value.image && !(m.uniforms.uMap.value.image instanceof HTMLCanvasElement)) {
+      badMat++;
+    }
+  });
+  out.push('noMaterial=' + badMat);
+  return out.join(' || ');
+};
+
 window.__repro = (g) => {
   const out = [];
   const int = g.world.interiors[0]; // 客栈（第一个室内）
@@ -289,16 +349,17 @@ window.__repro = (g) => {
             const dir = v3.sub(g.camera.position).normalize();
             g.scene.updateMatrixWorld(true);
             const rc = new THREE.Raycaster(g.camera.position, dir);
-            rc.far = 40;
-            const hits = rc.intersectObject(int.group, true);
-            if (hits.length) {
-              const h = hits[0];
+            rc.far = 80;
+            const hits = rc.intersectObjects(g.scene.children, true);
+            const names = [];
+            for (const h of hits.slice(0, 3)) {
               const mat = h.object.material;
-              const col = mat && mat.uniforms && mat.uniforms.uColor ? mat.uniforms.uColor.value.getHexString() : '?';
-              return 'hex' + col + '@(' + h.point.x.toFixed(0) + ',' + h.point.y.toFixed(1) + ',' + h.point.z.toFixed(0) + ')';
+              const col = mat && mat.uniforms && mat.uniforms.uColor ? mat.uniforms.uColor.value.getHexString() : (mat?.type || '?');
+              const visible = h.object.visible ? '' : '(隐)';
+              names.push(col + visible + '@' + h.object.parent?.type);
             }
-            return 'NOHIT';
-          } catch { return 'err'; }
+            return names.join('|') || 'NOHIT';
+          } catch (e) { return 'err:' + e.message; }
         };
         const hits = [rayAt(x0, y0), rayAt(x1, y0), rayAt(x0, y1), rayAt(x1, y1)].join(' ');
         found.push(`y${yaw.toFixed(1)}[${x0},${y0}-${x1},${y1}]${hits}`);
