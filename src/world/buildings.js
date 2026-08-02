@@ -5,6 +5,7 @@ import {
 } from '../render/materials.js';
 import { BUILDINGS, GATE, EXTRA_COLLIDERS } from './layout.js';
 import { buildInterior } from './interiors.js';
+import { Merger } from './merge.js';
 
 const wood = () => toon({ color: 0x8a6a44, map: woodTexture() });
 const darkWood = () => toon({ color: 0x6e4f2c });
@@ -94,91 +95,70 @@ function part(geo, mat, x, y, z, rx = 0, rz = 0) {
 // ============================================================
 function buildShop(b) {
   const g = new THREE.Group();
+  const M = new Merger();
   const w = b.w, d = b.d;
   const twoStory = b.id === 'tavern' || b.id === 'inn';
   const G1 = 3.4;                    // 首层墙高
   const F = w / 2;                   // facade 局部 +x
 
-  // ---- 墙身 ----
-  const body = new THREE.Mesh(flat(new THREE.BoxGeometry(w, G1, d)), wallM());
-  body.position.y = G1 / 2;
-  g.add(body);
+  // 每栋建筑复用同一套材质（合并前提）
+  const wallMat = toon({ color: 0xd5c7a2, map: wallTexture() });
+  const woodMat = toon({ color: 0x8a6a44, map: woodTexture() });
+  const darkWoodM = toon({ color: 0x6e4f2c });
+  const colM = toon({ color: 0x7d3f1f });
+  const beamM = toon({ color: 0x6e4f2c });
+  const winM = toon({ map: windowTexture() });
+  const doorwayM = toon({ color: 0x241a0e });
+  const doorLeafM = toon({ map: doorTexture(), side: THREE.DoubleSide });
+  const signM = toon({ map: signTexture(b.sign) });
+  const bannerM = toon({ map: bannerTexture(b.banner, b.bannerColor), transparent: true });
+  const flagM = toon({ color: b.bannerColor });
+  const awningM = toon({ color: b.bannerColor, transparent: true, opacity: 0.95 });
+  const lanternM = toon({ color: 0xc84a2a });
 
-  // ---- 檐柱 + 柱础（四角 + 门两侧） ----
-  const columnPos = [[-F + 0.25, -d / 2 + 0.25], [F - 0.25, -d / 2 + 0.25], [-F + 0.25, d / 2 - 0.25], [F - 0.25, d / 2 - 0.25]];
-  for (const [cx, cz] of columnPos) {
-    const col = part(new THREE.CylinderGeometry(0.16, 0.18, G1, 7), colMat(), cx, G1 / 2, cz);
-    g.add(col);
-    const base = columnBase();
-    base.position.set(cx, 0.11, cz);
-    g.add(base);
+  // ---- 墙身 ----
+  M.add(wallMat, new THREE.BoxGeometry(w, G1, d), 0, G1 / 2, 0);
+
+  // ---- 檐柱 + 柱础 ----
+  for (const [cx, cz] of [[-F + 0.25, -d / 2 + 0.25], [F - 0.25, -d / 2 + 0.25], [-F + 0.25, d / 2 - 0.25], [F - 0.25, d / 2 - 0.25]]) {
+    M.add(colM, new THREE.CylinderGeometry(0.16, 0.18, G1, 7), cx, G1 / 2, cz);
+    M.add(darkWoodM, new THREE.CylinderGeometry(0.2, 0.25, 0.22, 8), cx, 0.11, cz);
   }
 
   // ---- 立面木构（前脸横纵梁） ----
-  const beamMat = darkWood();
   for (let z = -d / 2 + 0.3; z <= d / 2 - 0.3; z += 1.35) {
     if (Math.abs(z) < 0.95) continue;              // 门洞处留空
-    g.add(part(new THREE.BoxGeometry(0.1, G1, 0.1), beamMat, F + 0.03, G1 / 2, z));
+    M.add(beamM, new THREE.BoxGeometry(0.1, G1, 0.1), F + 0.03, G1 / 2, z);
   }
-  g.add(part(new THREE.BoxGeometry(0.1, 0.14, d), beamMat, F + 0.03, G1 - 0.32, 0));  // 檐下横梁
-  g.add(part(new THREE.BoxGeometry(0.1, 0.12, d), beamMat, F + 0.03, 1.5, 0));        // 中枋
+  M.add(beamM, new THREE.BoxGeometry(0.1, 0.14, d), F + 0.03, G1 - 0.32, 0);  // 檐下横梁
+  M.add(beamM, new THREE.BoxGeometry(0.1, 0.12, d), F + 0.03, 1.5, 0);        // 中枋
 
-  // ---- 门（开张：暗门洞 + 斜开门扇）+ 门框 + 台阶 ----
-  const doorwayMat = toon({ color: 0x241a0e });
-  const doorway = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.7, 2.4)), doorwayMat);
-  doorway.rotation.y = Math.PI / 2;         // 与墙面平行、朝外
-  doorway.position.set(F - 0.16, 1.2, 0);
-  g.add(doorway);
-  const hinge = new THREE.Group();
-  hinge.position.set(F + 0.02, 1.2, -0.85); // 门轴在门洞一侧
-  const doorLeafMat = toon({ map: doorTexture(), side: THREE.DoubleSide });
-  const doorLeaf = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.7, 2.4)), doorLeafMat);
-  doorLeaf.rotation.y = Math.PI / 2;        // 门扇平面对齐墙面（宽沿 z）
-  doorLeaf.position.set(0, 0, 0.85);
-  hinge.add(doorLeaf);
-  hinge.rotation.y = -1.15;                 // 门扇向内打开，从外可见
-  g.add(hinge);
-  g.add(part(new THREE.BoxGeometry(0.14, 2.5, 2.0), colMat(), F - 0.04, 1.25, 0));    // 门框
-  g.add(part(new THREE.BoxGeometry(2.1, 0.18, 1.2), darkWood(), F + 0.9, 0.09, 0));  // 台阶
+  // ---- 门洞 + 门框 + 台阶（门扇单独，因铰链旋转） ----
+  M.add(doorwayM, new THREE.PlaneGeometry(1.7, 2.4), F - 0.16, 1.2, 0, 0, Math.PI / 2);
+  M.add(colM, new THREE.BoxGeometry(0.14, 2.5, 2.0), F - 0.04, 1.25, 0);
+  M.add(darkWoodM, new THREE.BoxGeometry(2.1, 0.18, 1.2), F + 0.9, 0.09, 0);
 
   // ---- 窗（暖光格窗） ----
-  const winMat = toon({ map: windowTexture() });
   for (const sz of [-1, 1]) {
-    g.add(part(new THREE.BoxGeometry(0.12, 0.18, 1.5), beamMat, F + 0.04, 2.6, sz * (d / 2 - 1.2))); // 窗框
-    const win = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.3, 1.1)), winMat);
-    win.position.set(F + 0.05, 2.6, sz * (d / 2 - 1.2));
-    g.add(win);
+    M.add(beamM, new THREE.BoxGeometry(0.12, 0.18, 1.5), F + 0.04, 2.6, sz * (d / 2 - 1.2));
+    M.add(winM, new THREE.PlaneGeometry(1.3, 1.1), F + 0.05, 2.6, sz * (d / 2 - 1.2), 0, Math.PI / 2);
   }
 
   // ---- 招牌（横匾 + 托臂） ----
-  const sign = new THREE.Mesh(flat(new THREE.PlaneGeometry(2.8, 0.66)), toon({ map: signTexture(b.sign) }));
-  sign.position.set(F + 0.08, 3.15, 0);
-  g.add(sign);
-  for (const sz of [-1, 1]) {
-    const arm = part(new THREE.BoxGeometry(0.1, 0.08, 0.35), colMat(), F + 0.06, 3.15, sz * 1.0);
-    arm.rotation.z = -0.2;
-    g.add(arm);
-  }
+  M.add(signM, new THREE.PlaneGeometry(2.8, 0.66), F + 0.08, 3.15, 0, 0, Math.PI / 2);
+  for (const sz of [-1, 1]) M.add(colM, new THREE.BoxGeometry(0.1, 0.08, 0.35), F + 0.06, 3.15, sz * 1.0, 0, 0, -0.2);
 
-  // ---- 布幌 + 灯 ----
-  const pole = part(new THREE.CylinderGeometry(0.06, 0.06, 1.7, 5), colMat(), F + 0.9, 3.1, -d / 2 + 0.7);
-  pole.rotation.z = Math.PI / 2;
-  g.add(pole);
-  const banner = new THREE.Mesh(flat(new THREE.PlaneGeometry(0.9, 2.6)), toon({ map: bannerTexture(b.banner, b.bannerColor), transparent: true }));
-  banner.position.set(F + 0.9, 2.1, -d / 2 + 0.7);
-  g.add(banner);
-  const flag = part(new THREE.PlaneGeometry(1.1, 0.55), toon({ color: b.bannerColor }), F + 0.9, 3.3, -d / 2 + 0.7);
-  g.add(flag);
-
-  // 门前红灯笼
+  // ---- 布幌 + 旗 + 灯 ----
+  M.add(colM, new THREE.CylinderGeometry(0.06, 0.06, 1.7, 5), F + 0.9, 3.1, -d / 2 + 0.7, 0, Math.PI / 2);
+  M.add(bannerM, new THREE.PlaneGeometry(0.9, 2.6), F + 0.9, 2.1, -d / 2 + 0.7, 0, Math.PI / 2);
+  M.add(flagM, new THREE.PlaneGeometry(1.1, 0.55), F + 0.9, 3.3, -d / 2 + 0.7, 0, Math.PI / 2);
   for (const sz of [-1, 1]) {
-    g.add(part(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 5), darkWood(), F - 0.55, 2.2, sz * 1.15));
-    g.add(part(new THREE.SphereGeometry(0.2, 7, 5), toon({ color: 0xc84a2a }), F - 0.55, 1.3, sz * 1.15));
+    M.add(darkWoodM, new THREE.CylinderGeometry(0.03, 0.03, 1.6, 5), F - 0.55, 2.2, sz * 1.15);
+    M.add(lanternM, new THREE.SphereGeometry(0.2, 7, 5), F - 0.55, 1.3, sz * 1.15);
   }
 
   // ---- 雨搭（门顶斜篷） ----
-  const awning = part(new THREE.PlaneGeometry(2.6, 1.6), toon({ color: b.bannerColor, transparent: true, opacity: 0.95 }), F + 0.85, 3.0, 0, 0, 0.35);
-  g.add(awning);
+  M.add(awningM, new THREE.PlaneGeometry(2.6, 1.6), F + 0.85, 3.0, 0, 0, 0, 0.35);
 
   // ---- 屋面（飞檐） ----
   const roof = roofMesh(w + 0.4, d + 0.4, 1.8, roofM());
@@ -186,54 +166,52 @@ function buildShop(b) {
   g.add(roof);
   g.add(ridgeDecor(w + 0.4, 1.8, roofM(), 0, G1 + 0.1 + 1.8, 0));
 
+  // ---- 门扇（铰链旋转，单独立） ----
+  const hinge = new THREE.Group();
+  hinge.position.set(F + 0.02, 1.2, -0.85);
+  const doorLeaf = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.7, 2.4)), doorLeafM);
+  doorLeaf.rotation.y = Math.PI / 2;
+  doorLeaf.position.set(0, 0, 0.85);
+  hinge.add(doorLeaf);
+  hinge.rotation.y = -1.15;
+  g.add(hinge);
+
   // ---- 二层（茶楼/客栈） ----
   if (twoStory) {
     const w2 = w - 1.0, d2 = d - 1.0;
     const y2 = G1 + 0.85;
-    // 上层墙
-    const upper = new THREE.Mesh(flat(new THREE.BoxGeometry(w2, 1.7, d2)), wallM());
-    upper.position.y = y2;
-    g.add(upper);
-    // 上层窗
+    M.add(wallMat, new THREE.BoxGeometry(w2, 1.7, d2), 0, y2, 0);
     for (const sz of [-1, 1]) {
-      g.add(part(new THREE.BoxGeometry(0.12, 0.16, 1.3), beamMat, F + 0.02, y2 + 0.25, sz * (d2 / 2 - 0.7)));
-      const win = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.1, 0.95)), winMat);
-      win.position.set(F + 0.05, y2 + 0.25, sz * (d2 / 2 - 0.7));
-      g.add(win);
+      M.add(beamM, new THREE.BoxGeometry(0.12, 0.16, 1.3), F + 0.02, y2 + 0.25, sz * (d2 / 2 - 0.7));
+      M.add(winM, new THREE.PlaneGeometry(1.1, 0.95), F + 0.05, y2 + 0.25, sz * (d2 / 2 - 0.7), 0, Math.PI / 2);
     }
-    // 檐下横梁
-    g.add(part(new THREE.BoxGeometry(0.1, 0.12, d), beamMat, F + 0.03, y2 + 0.95, 0));
-    // 上层柱
+    M.add(beamM, new THREE.BoxGeometry(0.1, 0.12, d), F + 0.03, y2 + 0.95, 0);
     for (const [cx, cz] of [[-w2 / 2, -d2 / 2], [w2 / 2, -d2 / 2], [-w2 / 2, d2 / 2], [w2 / 2, d2 / 2]]) {
-      g.add(part(new THREE.CylinderGeometry(0.12, 0.14, 1.7, 6), colMat(), cx, y2, cz));
+      M.add(colM, new THREE.CylinderGeometry(0.12, 0.14, 1.7, 6), cx, y2, cz);
     }
-    // 平座栏杆（沿首层顶外圈）
-    const railPosts = [], rails = [];
     const ry = G1 + 0.45, rH = 0.9;
     for (let x = -w / 2 + 0.2; x <= w / 2 - 0.2; x += 1.1) {
       if (Math.abs(x) < 1.0) continue;
-      railPosts.push(part(new THREE.BoxGeometry(0.08, rH, 0.08), beamMat, x, ry, -d / 2 + 0.12));
-      railPosts.push(part(new THREE.BoxGeometry(0.08, rH, 0.08), beamMat, x, ry, d / 2 - 0.12));
+      M.add(beamM, new THREE.BoxGeometry(0.08, rH, 0.08), x, ry, -d / 2 + 0.12);
+      M.add(beamM, new THREE.BoxGeometry(0.08, rH, 0.08), x, ry, d / 2 - 0.12);
     }
     for (let z = -d / 2 + 0.2; z <= d / 2 - 0.2; z += 1.1) {
       if (Math.abs(z) < 1.0) continue;
-      railPosts.push(part(new THREE.BoxGeometry(0.08, rH, 0.08), beamMat, -w / 2 + 0.12, ry, z));
-      railPosts.push(part(new THREE.BoxGeometry(0.08, rH, 0.08), beamMat, w / 2 - 0.12, ry, z));
+      M.add(beamM, new THREE.BoxGeometry(0.08, rH, 0.08), -w / 2 + 0.12, ry, z);
+      M.add(beamM, new THREE.BoxGeometry(0.08, rH, 0.08), w / 2 - 0.12, ry, z);
     }
-    rails.push(part(new THREE.BoxGeometry(w + 0.3, 0.1, 0.1), beamMat, 0, ry + rH - 0.05, -d / 2 + 0.12));
-    rails.push(part(new THREE.BoxGeometry(w + 0.3, 0.1, 0.1), beamMat, 0, ry + rH - 0.05, d / 2 - 0.12));
-    rails.push(part(new THREE.BoxGeometry(0.1, 0.1, d + 0.3), beamMat, -w / 2 + 0.12, ry + rH - 0.05, 0));
-    rails.push(part(new THREE.BoxGeometry(0.1, 0.1, d + 0.3), beamMat, w / 2 - 0.12, ry + rH - 0.05, 0));
-    for (const p of railPosts) g.add(p);
-    for (const r of rails) g.add(r);
-    // 上层屋面
+    M.add(beamM, new THREE.BoxGeometry(w + 0.3, 0.1, 0.1), 0, ry + rH - 0.05, -d / 2 + 0.12);
+    M.add(beamM, new THREE.BoxGeometry(w + 0.3, 0.1, 0.1), 0, ry + rH - 0.05, d / 2 - 0.12);
+    M.add(beamM, new THREE.BoxGeometry(0.1, 0.1, d + 0.3), -w / 2 + 0.12, ry + rH - 0.05, 0);
+    M.add(beamM, new THREE.BoxGeometry(0.1, 0.1, d + 0.3), w / 2 - 0.12, ry + rH - 0.05, 0);
     const roof2 = roofMesh(w + 0.4, d + 0.4, 1.5, roofM());
     roof2.position.y = y2 + 1.7;
     g.add(roof2);
     g.add(ridgeDecor(w + 0.4, 1.5, roofM(), 0, y2 + 1.7 + 1.5, 0));
   }
 
-  // ---- 定位 ----
+  // ---- 输出合并网格 + 定位 ----
+  for (const mesh of M.meshes()) g.add(mesh);
   g.position.set(b.x, 0, b.z);
   if (b.x > 0) g.rotation.y = Math.PI;
   g.userData.buildingId = b.id;

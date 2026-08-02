@@ -11,12 +11,15 @@ import { Inventory } from '../game/Inventory.js';
 import { QuestSystem } from '../game/QuestSystem.js';
 import { HUD } from '../game/HUD.js';
 import { buildScript } from '../data/dialogue.js';
+import { isTouchDevice } from './touch.js';
+import { TouchControls } from './TouchControls.js';
 
 export class Game {
   constructor(container) {
     // ---- 渲染器 ----
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const touch = isTouchDevice();
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touch ? 1 : 1.5)); // 触屏设备像素比=1
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
     this.renderer = renderer;
@@ -34,14 +37,15 @@ export class Game {
     this.scene.add(sun);
     this.scene.add(new THREE.HemisphereLight('#fff6e0', '#b7a080', 0.55));
 
-    // ---- 后处理 ----
+    // ---- 后处理（触屏设备跳过描边以提升帧率） ----
     const qp = new URLSearchParams(location.search);
-    this.composer = createComposer(renderer, this.scene, this.camera, { outline: qp.get('simple') !== '1' });
+    this.composer = createComposer(renderer, this.scene, this.camera, { outline: qp.get('simple') !== '1' && !touch });
 
     // ---- 系统 ----
     this.input = new Input(this.canvas);
     this.audio = new AudioSys();
     this.hud = new HUD();
+    this.touch = new TouchControls(this.input); // 触屏虚拟摇杆/按钮（非触屏为 no-op）
     this.world = new World(this.scene);
 
     // ---- 玩家 ----
@@ -112,7 +116,12 @@ export class Game {
 
     this._updateInteriorTransition(); // 步行进出店铺
 
-    for (const npc of this.npcList) npc.update(dt, this.player);
+    // 性能：远处 NPC 隐藏（任务相关 NPC 始终显示）
+    const camPos = this.camera.position;
+    for (const npc of this.npcList) {
+      npc.update(dt, this.player);
+      npc.visible = !!npc.questMark || npc.position.distanceTo(camPos) < 48;
+    }
     this.world.update(dt, this._t);
 
     this._updatePrompt();
@@ -142,6 +151,8 @@ export class Game {
 
   _updatePrompt() {
     if (this.hud.dialogueOpen) { this.hud.setPrompt(''); return; }
+    const act = isTouchDevice() ? '点「交谈」' : '按 <b>E</b>';
+    const actPick = isTouchDevice() ? '点「交谈」' : '按 <b>E</b> 采集';
     if (this._inside) {
       const int = this._inside;
       const d = Math.hypot(this.player.px - int.doorX, this.player.pz - int.doorZ);
@@ -153,9 +164,9 @@ export class Game {
     const npc = this._nearestNpc(2.6);
     const item = npc ? null : this._nearestInteractable(2.3);
     if (npc) {
-      this.hud.setPrompt(`<b>${npc.name}</b>（${ROLE_LABEL[npc.def.role] || '行人'}）· 按 <b>E</b> 交谈`);
+      this.hud.setPrompt(`<b>${npc.name}</b>（${ROLE_LABEL[npc.def.role] || '行人'}）· ${act} 交谈`);
     } else if (item) {
-      this.hud.setPrompt(`<b>${item.label}</b> · 按 <b>E</b> 采集`);
+      this.hud.setPrompt(`<b>${item.label}</b> · ${actPick}`);
     } else {
       this.hud.setPrompt('');
     }

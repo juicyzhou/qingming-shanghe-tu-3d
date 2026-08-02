@@ -1,4 +1,6 @@
 // 键盘 / 鼠标 / 指针锁定 输入管理
+import { isTouchDevice } from './touch.js';
+
 export class Input {
   constructor(canvas) {
     this.canvas = canvas;
@@ -31,7 +33,7 @@ export class Input {
     addEventListener('mouseup', () => { this.mouse.down = false; });
 
     canvas.addEventListener('click', () => {
-      if (!this.suspendLock && !this.locked) this.requestLock();
+      if (!isTouchDevice() && !this.suspendLock && !this.locked) this.requestLock();
     });
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
@@ -51,6 +53,11 @@ export class Input {
 
   isDown(code) { return this.keys.has(code); }
   wasPressed(code) { return this.pressed.has(code); }
+  // 触屏按钮：模拟一次按键
+  tapKey(code) {
+    this.keys.add(code);
+    this.pressed.add(code);
+  }
 
   endFrame() {
     this.mouse.dx = 0;

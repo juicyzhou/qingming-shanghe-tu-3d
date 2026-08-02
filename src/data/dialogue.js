@@ -83,7 +83,8 @@ export function buildScript(npc, game) {
           label: '好，我来帮你（节奏撑船）',
           action: () => game.hud.startMinigame(
             () => { q.minigameComplete(qid); game.hud.update(); },
-            () => {}
+            () => {},
+            game.touch
           ),
         }],
       });

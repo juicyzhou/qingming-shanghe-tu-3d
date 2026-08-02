@@ -1,5 +1,15 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { toon, flat } from '../render/materials.js';
+
+// 烘焙方块几何到局部坐标（用于同材质合并，减少 draw call）
+function bakeBox(w, h, d, x, y, z) {
+  const g = flat(new THREE.BoxGeometry(w, h, d));
+  const m = new THREE.Matrix4();
+  m.setPosition(x, y, z);
+  g.applyMatrix4(m);
+  return g;
+}
 
 // 参数化木偶角色：按身高/胖瘦生成身体，肢体以枢轴绕动实现程序化行走动画
 export class Character extends THREE.Group {
@@ -66,26 +76,25 @@ export class Character extends THREE.Group {
     this._applyHeadStyle(headW, headH);
     this.add(this.headGroup);
 
-    // ---- 手臂（肩枢轴） ----
+    // ---- 手臂（肩枢轴；臂+手同色合并为一） ----
     this.shoulderL = this._limbPivot(-torsoW / 2 - armW / 2 + 0.01, shoulderY);
     this.shoulderR = this._limbPivot(torsoW / 2 + armW / 2 - 0.01, shoulderY);
     for (const [p, s] of [[this.shoulderL, -1], [this.shoulderR, 1]]) {
-      const arm = new THREE.Mesh(flat(new THREE.BoxGeometry(armW, armL, armW)), clothMat);
-      arm.position.y = -armL / 2;
+      const armGeo = mergeGeometries([
+        bakeBox(armW, armL, armW, 0, -armL / 2, 0),
+        bakeBox(armW * 0.95, H * 0.06, armW * 0.95, 0, -armL + H * 0.03, 0),   // 手(以袖色收口)
+      ], false);
+      const arm = new THREE.Mesh(armGeo, clothMat);
       p.add(arm);
       if (this.app.sleeveColor) {
         const cuff = new THREE.Mesh(flat(new THREE.BoxGeometry(armW + 0.02, armL * 0.22, armW + 0.02)), toon({ color: this.app.sleeveColor }));
         cuff.position.y = -armL * 0.82;
         p.add(cuff);
       }
-      // 手
-      const hand = new THREE.Mesh(flat(new THREE.BoxGeometry(armW * 0.95, H * 0.06, armW * 0.95)), skinFace);
-      hand.position.y = -armL + H * 0.03;
-      p.add(hand);
       this.add(p);
     }
 
-    // ---- 腿（髋 + 膝双段） ----
+    // ---- 腿（髋大腿 + 膝段小腿/脚合并） ----
     this.hipL = this._limbPivot(-legW * 0.62, hipY);
     this.hipR = this._limbPivot(legW * 0.62, hipY);
     for (const [hp, side] of [[this.hipL, -1], [this.hipR, 1]]) {
@@ -94,12 +103,11 @@ export class Character extends THREE.Group {
       hp.add(thigh);
       const knee = new THREE.Group();
       knee.position.y = -thighL;
-      const shin = new THREE.Mesh(flat(new THREE.BoxGeometry(legW * 0.9, shinL, legW * 0.9)), pantsMat);
-      shin.position.y = -shinL / 2;
-      knee.add(shin);
-      const foot = new THREE.Mesh(flat(new THREE.BoxGeometry(legW * 1.15, H * 0.05, H * 0.13)), toon({ color: this.app.shoe || 0x2a2018 }));
-      foot.position.set(0, -shinL + H * 0.025, H * 0.035);
-      knee.add(foot);
+      const shinFootGeo = mergeGeometries([
+        bakeBox(legW * 0.9, shinL, legW * 0.9, 0, -shinL / 2, 0),
+        bakeBox(legW * 1.15, H * 0.05, H * 0.13, 0, -shinL + H * 0.025, H * 0.035),   // 脚(与裤同色)
+      ], false);
+      knee.add(new THREE.Mesh(shinFootGeo, pantsMat));
       hp.add(knee);
       this.add(hp);
     }

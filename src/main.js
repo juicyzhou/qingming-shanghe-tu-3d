@@ -250,7 +250,11 @@ window.__probe = (g) => {
   parts.push(`cam=(${camera.position.x.toFixed(1)},${camera.position.y.toFixed(1)},${camera.position.z.toFixed(1)})`);
   parts.push(`ply=(${g.player.px.toFixed(1)},${g.player.pz.toFixed(1)}) free=${g.player._freeCam}`);
   parts.push('meshes=' + (() => { let n = 0; g.scene.traverse(o => n++); return n; })());
-  parts.push(`calls=${g.renderer.info.render.calls} tris=${g.renderer.info.render.triangles}`);
+  const worldVis = (o) => { let p = o; while (p) { if (p.visible === false) return false; p = p.parent; } return true; };
+  let vm = 0, vt = 0, npcM = 0;
+  g.scene.traverse(o => { if (o.isMesh && worldVis(o)) { vm++; vt += (o.geometry.attributes.position ? o.geometry.attributes.position.count : 0); } });
+  for (const npc of g.npcList) if (worldVis(npc)) npc.traverse(o => { if (o.isMesh) npcM++; });
+  parts.push(`visMeshes=${vm} visTris=${vt} visNpcMeshes=${npcM}`);
   parts.push(sample(20, 0.3, 30, 'river'));
   parts.push(sample(0, 0.05, -40, 'roadN'));
   parts.push(sample(11.5, 6.5, -70, 'roof'));

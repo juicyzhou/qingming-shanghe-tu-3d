@@ -54,6 +54,21 @@ const CSS = `
   #hud .questlog h3{margin:0 0 6px;color:#6e4a20;}
   #hud .questlog .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #c8b088;padding:3px 0;}
   #hud .questlog .row.done{color:#5a6e3a;text-decoration:line-through;}
+  /* 触屏/小屏适配 */
+  @media (pointer:coarse), (max-width:768px){
+    #hud .coins{font-size:14px;padding:6px 10px;}
+    #hud .coin-ico{width:16px;height:16px;}
+    #hud .coin-ico::after{inset:3px;}
+    #hud .quest-track{min-width:140px;max-width:180px;padding:6px 10px;font-size:12px;}
+    #hud .hint{display:none;}
+    #hud canvas.minimap{width:120px;height:120px;}
+    #hud .dialogue{width:94vw;padding:12px 14px;font-size:15px;}
+    #hud .d-text{font-size:15px;}
+    #hud .d-opt{font-size:14px;padding:9px 12px;}
+    #hud .prompt{font-size:15px;bottom:10%;padding:8px 14px;}
+    #hud .title h1{font-size:40px;}
+    #hud .settle{width:92vw;}
+  }
 `;
 
 export class HUD {
@@ -235,40 +250,43 @@ export class HUD {
   }
 
   // ---- 撑船小玩法 ----
-  startMinigame(onSuccess, onClose) {
+  startMinigame(onSuccess, onClose, touch) {
     const m = this.cache.minigame;
     m.innerHTML = `
       <h3 style="margin:0 0 12px;color:#5a2c10">帮船老大撑船过桥</h3>
       <div class="mg-bar"><div class="mg-zone"></div><div class="mg-marker" id="mg-marker"></div></div>
       <div class="mg-prog" id="mg-prog">0 / 5 桨</div>
-      <div class="mg-tip">在绿色标区按下 <b>空格</b>（或点击画面）</div>`;
+      <div class="mg-tip">在绿色标区按下 <b>空格</b>${touch && touch.enabled ? '（或点下方推桨）' : ''}</div>`;
     m.style.display = 'block';
     let hits = 0, t = 0, dir = 1, running = true;
     const marker = m.querySelector('#mg-marker');
     const prog = m.querySelector('#mg-prog');
     const zoneL = 39, zoneW = 22;
     let x = 20;
-    const keyFn = (e) => {
-      if (e.code === 'Space' && running) {
-        const inZone = x > zoneL && x < zoneL + zoneW;
-        if (inZone) {
-          hits++;
-          this.toast('稳！');
-          if (this._audio) this._audio.blip();
-          prog.textContent = `${hits} / 5 桨`;
-          if (hits >= 5) {
-            running = false;
-            removeEventListener('keydown', keyFn);
-            m.style.display = 'none';
-            this._minigameClose = null;
-            onSuccess();
-          }
-        } else {
-          this.toast('桨偏了，再来');
-          if (this._audio) this._audio.click();
+    const hit = () => {
+      if (!running) return;
+      const inZone = x > zoneL && x < zoneL + zoneW;
+      if (inZone) {
+        hits++;
+        this.toast('稳！');
+        if (this._audio) this._audio.blip();
+        prog.textContent = `${hits} / 5 桨`;
+        if (hits >= 5) {
+          running = false;
+          if (mgBtn) mgBtn.remove();
+          removeEventListener('keydown', keyFn);
+          m.style.display = 'none';
+          this._minigameClose = null;
+          onSuccess();
         }
+      } else {
+        this.toast('桨偏了，再来');
+        if (this._audio) this._audio.click();
       }
     };
+    let mgBtn = null;
+    if (touch && touch.enabled) mgBtn = touch.minigameButton(hit);
+    const keyFn = (e) => { if (e.code === 'Space') hit(); };
     addEventListener('keydown', keyFn);
     const frame = () => {
       if (!running) return;
