@@ -35,9 +35,9 @@ export class Player extends Character {
   }
 
   update(dt, input) {
-    // ---- 视角 ----
+    // ---- 视角（右移鼠标/右拖 → 右转） ----
     const sens = 0.0021;
-    this.yaw -= input.mouse.dx * sens;
+    this.yaw += input.mouse.dx * sens;
     this.pitch -= input.mouse.dy * sens;
     this.pitch = Math.max(-0.9, Math.min(0.6, this.pitch));
 

@@ -150,9 +150,13 @@ export class Game {
   }
 
   _updatePrompt() {
-    if (this.hud.dialogueOpen) { this.hud.setPrompt(''); return; }
     const act = isTouchDevice() ? '点「交谈」' : '按 <b>E</b>';
     const actPick = isTouchDevice() ? '点「交谈」' : '按 <b>E</b> 采集';
+    if (this.hud.dialogueOpen) { this.hud.setPrompt(''); this.touch?.setInteractVisible(false); return; }
+    // 交谈按钮只在有可交互目标时显示（触屏）
+    const npc = this._nearestNpc(2.6);
+    const item = this._nearestInteractable(2.3);
+    this.touch?.setInteractVisible(!!(npc || item));
     if (this._inside) {
       const int = this._inside;
       const d = Math.hypot(this.player.px - int.doorX, this.player.pz - int.doorZ);
@@ -161,8 +165,6 @@ export class Game {
     }
     const door = this._nearestDoor(2.2);
     if (door) { this.hud.setPrompt(`<b>${door.def.name}</b> 开张中 · 直接走进店门`); return; }
-    const npc = this._nearestNpc(2.6);
-    const item = npc ? null : this._nearestInteractable(2.3);
     if (npc) {
       this.hud.setPrompt(`<b>${npc.name}</b>（${ROLE_LABEL[npc.def.role] || '行人'}）· ${act} 交谈`);
     } else if (item) {

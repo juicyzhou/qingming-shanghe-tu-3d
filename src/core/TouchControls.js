@@ -46,6 +46,7 @@ export class TouchControls {
     this.btnE = el('button', 't-btn t-e', '交谈');
     this.btnV = el('button', 't-btn t-v', '视角');
     this.btnJ = el('button', 't-btn t-j', '任务');
+    this.btnE.style.display = 'none';   // 有可交互目标时才显示
     document.body.appendChild(this.btnE);
     document.body.appendChild(this.btnV);
     document.body.appendChild(this.btnJ);
@@ -66,21 +67,35 @@ export class TouchControls {
     return b;
   }
 
+  // 交谈按钮：有可交互目标时才显示
+  setInteractVisible(v) {
+    if (!this.enabled) return;
+    this.btnE.style.display = v ? 'flex' : 'none';
+  }
+
   _bindJoystick() {
     const R = 52;
+    let trackId = null;
+    const findTouch = (list) => {
+      for (const t of list) if (t.identifier === trackId) return t;
+      return null;
+    };
     const clear = () => {
+      trackId = null;
       this._joyOrigin = null;
       this.joyKnob.style.transform = 'translate(0,0)';
       for (const k of ['KeyW', 'KeyA', 'KeyS', 'KeyD']) this.input.keys.delete(k);
     };
     this.joyBase.addEventListener('touchstart', (e) => {
-      const t = e.touches[0];
+      if (trackId !== null) return;               // 已有拇指在摇杆
+      const t = e.changedTouches[0];
+      trackId = t.identifier;
       this._joyOrigin = { x: t.clientX, y: t.clientY };
       e.preventDefault();
     }, { passive: false });
     this.joyBase.addEventListener('touchmove', (e) => {
-      const t = e.touches[0];
-      if (!this._joyOrigin) return;
+      const t = findTouch(e.changedTouches);      // 只跟随本摇杆的手指
+      if (!t || !this._joyOrigin) return;
       let dx = t.clientX - this._joyOrigin.x;
       let dy = t.clientY - this._joyOrigin.y;
       const d = Math.hypot(dx, dy);
@@ -95,28 +110,34 @@ export class TouchControls {
       if (vx < -dead) this.input.keys.add('KeyA');
       e.preventDefault();
     }, { passive: false });
-    this.joyBase.addEventListener('touchend', clear);
+    this.joyBase.addEventListener('touchend', (e) => {
+      for (const t of e.changedTouches) if (t.identifier === trackId) { clear(); break; }
+    });
     this.joyBase.addEventListener('touchcancel', clear);
   }
 
   _bindLook() {
-    let lx = 0, ly = 0, active = false;
+    let trackId = null, lx = 0, ly = 0;
     this.look.addEventListener('touchstart', (e) => {
-      active = true;
-      const t = e.touches[0];
+      if (trackId !== null) return;
+      const t = e.changedTouches[0];
+      trackId = t.identifier;
       lx = t.clientX; ly = t.clientY;
       e.preventDefault();
     }, { passive: false });
     this.look.addEventListener('touchmove', (e) => {
-      if (!active) return;
-      const t = e.touches[0];
+      let t = null;
+      for (const c of e.changedTouches) if (c.identifier === trackId) { t = c; break; }
+      if (!t) return;
       const dx = t.clientX - lx, dy = t.clientY - ly;
       this.input.mouse.dx += dx * 5;
       this.input.mouse.dy += dy * 5;
       lx = t.clientX; ly = t.clientY;
       e.preventDefault();
     }, { passive: false });
-    const end = () => { active = false; };
+    const end = (e) => {
+      for (const c of e.changedTouches) if (c.identifier === trackId) { trackId = null; break; }
+    };
     this.look.addEventListener('touchend', end);
     this.look.addEventListener('touchcancel', end);
   }
