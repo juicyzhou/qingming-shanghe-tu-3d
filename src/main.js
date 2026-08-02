@@ -297,6 +297,19 @@ window.__probe = (g) => {
   parts.push(sample(16.4, 1.5, -70, 'intWall'));
   parts.push(sample(13, 2.9, -69, 'intCeil'));
   parts.push(sample(13, 0.1, -69, 'intFloor'));
+  // 门/布幌（view=shop 时可见）
+  parts.push(sample(-6.4, 1.2, -70, 'clinicDoor'));
+  parts.push(sample(-5.8, 2.1, -73.3, 'clinicBanner2'));
+  // 反光检测：统计 >244 亮度像素占比
+  try {
+    const idata = ctx.getImageData(0, 0, snap.width, snap.height).data;
+    let bright = 0, nn = 0;
+    for (let i = 0; i < idata.length; i += 16) {
+      nn++;
+      if (Math.max(idata[i], idata[i + 1], idata[i + 2]) > 244) bright++;
+    }
+    parts.push(`glare=${(100 * bright / nn).toFixed(1)}%`);
+  } catch { parts.push('glare=na'); }
   return parts.join(' | ');
 };
 

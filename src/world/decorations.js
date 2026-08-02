@@ -77,7 +77,7 @@ function buildStall(s) {
   if (s.id === 'story') {
     M.add(darkW, new THREE.BoxGeometry(3.2, 0.4, 2.6), 0, 0.2, 0);
     M.add(toon({ color: 0x4a3a26 }), new THREE.BoxGeometry(3.0, 1.8, 0.15), -0.2, 1.3, -1.15);
-    M.add(toon({ map: signTexture('说书场', 220, 64, '#24443b', '#f0e6c8') }), new THREE.PlaneGeometry(1.6, 0.6), 0.2, 2.0, -1.07, 0, Math.PI / 2);
+    M.add(toon({ map: signTexture('说书场', 220, 64, '#24443b', '#f0e6c8') }), new THREE.PlaneGeometry(1.6, 0.6), 0.2, 2.0, -1.07); // 朝观众
     for (const [x, z] of [[-1.3, -1.3], [1.3, -1.3], [-1.3, 1.3], [1.3, 1.3]]) {
       M.add(darkW, new THREE.CylinderGeometry(0.07, 0.09, 2.1, 5), x, 1.05, z);
     }

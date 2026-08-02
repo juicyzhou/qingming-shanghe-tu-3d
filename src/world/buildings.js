@@ -133,10 +133,12 @@ function buildShop(b) {
   M.add(beamM, new THREE.BoxGeometry(0.1, 0.14, d), F + 0.03, G1 - 0.32, 0);  // 檐下横梁
   M.add(beamM, new THREE.BoxGeometry(0.1, 0.12, d), F + 0.03, 1.5, 0);        // 中枋
 
-  // ---- 门洞 + 门框 + 台阶（门扇单独，因铰链旋转） ----
-  M.add(doorwayM, new THREE.PlaneGeometry(1.7, 2.4), F - 0.16, 1.2, 0, 0, Math.PI / 2);
-  M.add(colM, new THREE.BoxGeometry(0.14, 2.5, 2.0), F - 0.04, 1.25, 0);
-  M.add(darkWoodM, new THREE.BoxGeometry(2.1, 0.18, 1.2), F + 0.9, 0.09, 0);
+  // ---- 门洞（暗色凸显开门）+ 门框（两侧柱+门楣）+ 台阶 ----
+  M.add(doorwayM, new THREE.PlaneGeometry(1.7, 2.4), F + 0.03, 1.2, 0, 0, Math.PI / 2);   // 暗门洞
+  M.add(colM, new THREE.BoxGeometry(0.14, 2.5, 0.16), F + 0.05, 1.25, -0.85);            // 左门框柱
+  M.add(colM, new THREE.BoxGeometry(0.14, 2.5, 0.16), F + 0.05, 1.25, 0.85);             // 右门框柱
+  M.add(colM, new THREE.BoxGeometry(0.16, 0.28, 1.85), F + 0.05, 2.42, 0);               // 门楣
+  M.add(darkWoodM, new THREE.BoxGeometry(2.1, 0.18, 1.2), F + 0.9, 0.09, 0);             // 台阶
 
   // ---- 窗（暖光格窗） ----
   for (const sz of [-1, 1]) {
@@ -148,17 +150,17 @@ function buildShop(b) {
   M.add(signM, new THREE.PlaneGeometry(2.8, 0.66), F + 0.08, 3.15, 0, 0, Math.PI / 2);
   for (const sz of [-1, 1]) M.add(colM, new THREE.BoxGeometry(0.1, 0.08, 0.35), F + 0.06, 3.15, sz * 1.0, 0, 0, -0.2);
 
-  // ---- 布幌 + 旗 + 灯 ----
-  M.add(colM, new THREE.CylinderGeometry(0.06, 0.06, 1.7, 5), F + 0.9, 3.1, -d / 2 + 0.7, 0, Math.PI / 2);
-  M.add(bannerM, new THREE.PlaneGeometry(0.9, 2.6), F + 0.9, 2.1, -d / 2 + 0.7, 0, Math.PI / 2);
-  M.add(flagM, new THREE.PlaneGeometry(1.1, 0.55), F + 0.9, 3.3, -d / 2 + 0.7, 0, Math.PI / 2);
+  // ---- 布幌（横杆挑出）+ 旗 + 灯 ----
+  M.add(colM, new THREE.CylinderGeometry(0.05, 0.05, 1.35, 5), F + 0.7, 3.1, -d / 2 + 0.7, 0, 0, Math.PI / 2); // 横杆
+  M.add(bannerM, new THREE.PlaneGeometry(0.9, 2.6), F + 0.7, 2.1, -d / 2 + 0.7, 0, Math.PI / 2);
+  M.add(flagM, new THREE.PlaneGeometry(1.1, 0.55), F + 0.7, 3.25, -d / 2 + 0.7, 0, Math.PI / 2);
   for (const sz of [-1, 1]) {
     M.add(darkWoodM, new THREE.CylinderGeometry(0.03, 0.03, 1.6, 5), F - 0.55, 2.2, sz * 1.15);
     M.add(lanternM, new THREE.SphereGeometry(0.2, 7, 5), F - 0.55, 1.3, sz * 1.15);
   }
 
-  // ---- 雨搭（门顶斜篷） ----
-  M.add(awningM, new THREE.PlaneGeometry(2.6, 1.6), F + 0.85, 3.0, 0, 0, 0, 0.35);
+  // ---- 雨搭（门顶斜篷，朝外倾斜） ----
+  M.add(awningM, new THREE.BoxGeometry(1.6, 0.1, 2.6), F + 0.75, 2.95, 0, 0.35);
 
   // ---- 屋面（飞檐） ----
   const roof = roofMesh(w + 0.4, d + 0.4, 1.8, roofM());
@@ -200,10 +202,10 @@ function buildShop(b) {
       M.add(beamM, new THREE.BoxGeometry(0.08, rH, 0.08), -w / 2 + 0.12, ry, z);
       M.add(beamM, new THREE.BoxGeometry(0.08, rH, 0.08), w / 2 - 0.12, ry, z);
     }
-    M.add(beamM, new THREE.BoxGeometry(w + 0.3, 0.1, 0.1), 0, ry + rH - 0.05, -d / 2 + 0.12);
-    M.add(beamM, new THREE.BoxGeometry(w + 0.3, 0.1, 0.1), 0, ry + rH - 0.05, d / 2 - 0.12);
-    M.add(beamM, new THREE.BoxGeometry(0.1, 0.1, d + 0.3), -w / 2 + 0.12, ry + rH - 0.05, 0);
-    M.add(beamM, new THREE.BoxGeometry(0.1, 0.1, d + 0.3), w / 2 - 0.12, ry + rH - 0.05, 0);
+    M.add(beamM, new THREE.BoxGeometry(w + 0.1, 0.1, 0.1), 0, ry + rH - 0.05, -d / 2 + 0.12);
+    M.add(beamM, new THREE.BoxGeometry(w + 0.1, 0.1, 0.1), 0, ry + rH - 0.05, d / 2 - 0.12);
+    M.add(beamM, new THREE.BoxGeometry(0.1, 0.1, d + 0.1), -w / 2 + 0.12, ry + rH - 0.05, 0);
+    M.add(beamM, new THREE.BoxGeometry(0.1, 0.1, d + 0.1), w / 2 - 0.12, ry + rH - 0.05, 0);
     const roof2 = roofMesh(w + 0.4, d + 0.4, 1.5, roofM());
     roof2.position.y = y2 + 1.7;
     g.add(roof2);

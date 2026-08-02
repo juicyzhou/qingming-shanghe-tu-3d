@@ -7,7 +7,7 @@ import { EXTRA_COLLIDERS } from './layout.js';
 // ============================================================
 
 // 室内材质统一加暖色环境光增益，避免背阴墙/顶被压成灰暗平面
-const BOOST = 0.8;
+const BOOST = 0.5;
 const wood = () => toon({ color: 0x9a7548, map: woodTexture(), boost: BOOST });
 const darkWood = () => toon({ color: 0x6e4f2c, boost: BOOST });
 const wallMat = () => toon({ color: 0xd5c7a2, map: wallTexture(), boost: BOOST });
@@ -226,7 +226,7 @@ export function buildInterior(b) {
     wall.material.side = THREE.DoubleSide;
     return wall;
   };
-  const gap = 1.0;                       // 门洞半宽（沿 z）
+  const gap = 0.85;                      // 门洞半宽（沿 z，与碰撞一致）
   const backX = cx - facing * hw;        // 门对面的墙
   g.add(mkWall(b.d, WALL_H, backX, WALL_H / 2, cz, Math.PI / 2));        // 背墙（跨 z）
   g.add(mkWall(b.w, WALL_H, cx, WALL_H / 2, cz - hd, 0));                 // 侧墙1（跨 x）

@@ -493,9 +493,9 @@ export const CLOTH_PALETTE = [
 
 export const LIGHT_UNIFORMS = {
   uSunDir: { value: new THREE.Vector3(0.45, 0.85, 0.3).normalize() },
-  uSunColor: { value: new THREE.Color('#fff0d0') },
-  uAmbient: { value: new THREE.Color('#f5e6c8').multiplyScalar(0.55) },
-  uRimColor: { value: new THREE.Color('#ffeed2') },
+  uSunColor: { value: new THREE.Color('#fff0d0').multiplyScalar(0.5) },
+  uAmbient: { value: new THREE.Color('#f5e6c8').multiplyScalar(0.52) },
+  uRimColor: { value: new THREE.Color('#ffd9a0') },
   uRimPower: { value: 2.4 },
   uSteps: { value: 3.0 },
   uBoost: { value: 0 },   // 室内环境光增益，避免背阴面压成灰暗
@@ -546,8 +546,10 @@ void main() {
   float d = floor(ndl * uSteps + 0.55) / uSteps;   // 量化明暗
   d = max(d, 0.12);
   vec3 col = uAmbient * (1.0 + uBoost) + uSunColor * d;
+  // 边缘光：仅向阳面、强度克制，避免反光发白
   float rim = pow(1.0 - max(dot(normalize(vNormal), normalize(vView)), 0.0), uRimPower);
-  col += uRimColor * rim * 0.9;
+  rim *= smoothstep(0.05, 0.3, ndl);
+  col += uRimColor * rim * 0.2;
   col *= base;
   float fogFactor = smoothstep(uFogNear, uFogFar, vFogDepth);
   col = mix(col, uFogColor, clamp(fogFactor, 0.0, 1.0));

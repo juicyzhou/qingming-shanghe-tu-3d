@@ -30,8 +30,8 @@ export function createComposer(renderer, scene, camera, { outline: useOutline = 
     uniforms: {
       tDiffuse: { value: null },
       uVignette: { value: 0.32 },
-      uWarm: { value: 0.12 },
-      uPaper: { value: 0.06 },
+      uWarm: { value: 0.05 },
+      uPaper: { value: 0.04 },
     },
     vertexShader: /* glsl */`
       varying vec2 vUv;
