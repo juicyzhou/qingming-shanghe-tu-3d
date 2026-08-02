@@ -493,8 +493,8 @@ export const CLOTH_PALETTE = [
 
 export const LIGHT_UNIFORMS = {
   uSunDir: { value: new THREE.Vector3(0.45, 0.85, 0.3).normalize() },
-  uSunColor: { value: new THREE.Color('#fff0d0').multiplyScalar(0.5) },
-  uAmbient: { value: new THREE.Color('#f5e6c8').multiplyScalar(0.52) },
+  uSunColor: { value: new THREE.Color('#fff0d0').multiplyScalar(0.8) },
+  uAmbient: { value: new THREE.Color('#f5e6c8').multiplyScalar(0.5) },
   uRimColor: { value: new THREE.Color('#ffd9a0') },
   uRimPower: { value: 2.4 },
   uSteps: { value: 3.0 },
@@ -549,16 +549,26 @@ void main() {
   base *= tex.rgb;
   float alpha = uOpacity;
   if (uUseAlpha > 0.5) { alpha *= tex.a; if (alpha < 0.1) discard; } // 卷轴镂空
-  float ndl = max(dot(normalize(vNormal), normalize(uSunDir)), 0.0);
-  float d = floor(ndl * uSteps + 0.55) / uSteps;   // 量化明暗
-  d = max(d, 0.22);                                // 暗部保底，避免背阴面压成暗灰
+  // 法线/视线 NaN 防护（真实 GPU 上 normalize(0) 会产生垃圾三角形）
+  vec3 n = vNormal;
+  if (!(length(n) > 1e-5)) n = vec3(0.0, 0.0, 1.0);
+  n = normalize(n);
+  vec3 vv = vView;
+  if (!(length(vv) > 1e-5)) vv = vec3(0.0, 0.0, 1.0);
+  vv = normalize(vv);
+  vec3 sd = normalize(uSunDir);
+  float ndl = max(dot(n, sd), 0.0);
+  float d = floor(ndl * max(uSteps, 0.001) + 0.55) / max(uSteps, 0.001); // 量化明暗
+  d = max(d, 0.15);                                // 暗部保底
   vec3 col = uAmbient * (1.0 + uBoost) + uSunColor * d;
-  // 边缘光：仅向阳面、强度克制，避免反光发白
-  float rim = pow(1.0 - max(dot(normalize(vNormal), normalize(vView)), 0.0), uRimPower);
+  // 边缘光：仅向阳面、强度克制
+  float rim = pow(1.0 - max(dot(n, vv), 0.0), uRimPower);
   rim *= smoothstep(0.05, 0.3, ndl);
-  col += uRimColor * rim * 0.2;
+  col += uRimColor * rim * 0.3;
   col *= base;
-  float fogFactor = smoothstep(uFogNear, uFogFar, vFogDepth);
+  // 柔和高光压缩（防过曝发白，同时保持暖色饱和）
+  col = 1.0 - exp(-col * 1.5);
+  float fogFactor = smoothstep(uFogNear, uFogFar, max(vFogDepth, 0.0));
   col = mix(col, uFogColor, clamp(fogFactor, 0.0, 1.0));
   gl_FragColor = vec4(col, alpha);
 }`;

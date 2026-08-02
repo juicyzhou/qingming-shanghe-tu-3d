@@ -246,16 +246,40 @@ window.__nanScan = (g) => {
       if (!Number.isFinite(v)) { hasBad = true; break; }
       if (v < minV) minV = v; if (v > maxV) maxV = v;
     }
+    // 法线 NaN（退化三角形导致）
+    let badNormal = false;
+    const nor = o.geometry.attributes.normal;
+    if (nor) {
+      const na = nor.array;
+      for (let i = 0; i < na.length; i++) {
+        if (!Number.isFinite(na[i])) { badNormal = true; break; }
+      }
+    }
+    // 退化三角形（顶点重复）
+    let degTri = 0;
+    if (!o.geometry.index) {
+      const stride = 3;
+      for (let t = 0; t < pos.count; t += 3) {
+        const i0 = t * stride, i1 = i0 + stride, i2 = i1 + stride;
+        const a0 = arr[i0], a1 = arr[i0 + 1], a2 = arr[i0 + 2];
+        const b0 = arr[i1], b1 = arr[i1 + 1], b2 = arr[i1 + 2];
+        const c0 = arr[i2], c1 = arr[i2 + 1], c2 = arr[i2 + 2];
+        if ((a0 === b0 && a1 === b1 && a2 === b2) ||
+            (a0 === c0 && a1 === c1 && a2 === c2) ||
+            (b0 === c0 && b1 === c1 && b2 === c2)) degTri++;
+      }
+    }
+    const chain = (() => { let p = o.parent, ch = ''; while (p && p !== g.scene) { ch = '>' + (p.type) + ch; p = p.parent; } return ch; })();
     if (hasBad) {
       bad++;
-      let kind = '?';
-      let p = o.parent;
-      let chain = '';
-      while (p && p !== g.scene) { chain = '>' + (p.userData?.stallId || p.userData?.buildingId || p.userData?.boat ? 'obj' : p.type) + chain; p = p.parent; }
-      offenders.push(`${o.geometry.type} parentChain=${chain} verts=${pos.count}`);
+      offenders.push(`POS_NAN ${o.geometry.type} chain=${chain}`);
+    } else if (badNormal) {
+      bad++;
+      offenders.push(`NORMAL_NAN ${o.geometry.type} chain=${chain}`);
+    } else if (degTri > 0) {
+      offenders.push(`DEG_TRI x${degTri} ${o.geometry.type} chain=${chain}`);
     } else if (maxV > 500 || maxV < -500) {
-      // 超大坐标（可能来自坏变换）
-      offenders.push(`HUGE ${o.geometry.type} parent=${o.parent?.type} maxV=${Math.round(maxV)}`);
+      offenders.push(`HUGE ${o.geometry.type} chain=${chain} maxV=${Math.round(maxV)}`);
     }
   });
   out.push('badVerts=' + bad);

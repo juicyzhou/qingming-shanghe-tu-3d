@@ -29,9 +29,9 @@ export function createComposer(renderer, scene, camera, { outline: useOutline = 
   const warmPass = new ShaderPass({
     uniforms: {
       tDiffuse: { value: null },
-      uVignette: { value: 0.32 },
-      uWarm: { value: 0.05 },
-      uPaper: { value: 0.04 },
+      uVignette: { value: 0.3 },
+      uWarm: { value: 0.1 },
+      uPaper: { value: 0.05 },
     },
     vertexShader: /* glsl */`
       varying vec2 vUv;

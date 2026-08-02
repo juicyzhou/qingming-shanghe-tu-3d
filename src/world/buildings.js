@@ -29,6 +29,12 @@ function roofY(x, z, W, D, h) {
 }
 
 // 双坡飞檐屋面（分段曲面 + 脊饰）
+// 山墙：真三角形（避免退化三角形在真实 GPU 上渲染成垃圾平面）
+function pushTri(pos, uv, a, b, c, W, D) {
+  pos.push(...a, ...b, ...c);
+  for (const v of [a, b, c]) uv.push((v[0] + W) / (2 * W), (v[2] + D) / (2 * D));
+}
+
 function roofMesh(w, d, h, mat) {
   const W = w / 2 + 0.9, D = d / 2 + 0.9;
   const N = 12, M = 16;
