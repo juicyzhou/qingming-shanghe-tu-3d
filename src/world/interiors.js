@@ -133,8 +133,9 @@ function screen(x, z, w = 1.6, h = 1.4) {
     g.add(part(new THREE.BoxGeometry(0.06, h, 0.05), frameMat, -w / 2 + i * (w / 2), h / 2, 0));
   }
   g.add(part(new THREE.BoxGeometry(w, 0.08, 0.05), frameMat, 0, h - 0.04, 0));
+  const panelMat = toon({ color: 0x6a7a52, side: THREE.DoubleSide }); // 双面暖灰绿，避免背面消失
   for (let i = 0; i < 3; i++) {
-    g.add(part(new THREE.PlaneGeometry(w / 2 - 0.06, h - 0.1), toon({ color: 0x3a5a6a }), -w / 2 + w / 4 + i * (w / 2), h / 2, 0));
+    g.add(part(new THREE.PlaneGeometry(w / 2 - 0.06, h - 0.1), panelMat, -w / 2 + w / 4 + i * (w / 2), h / 2, 0));
   }
   g.position.set(x, 0, z);
   addCol(x, z, w / 2, 0.12);
@@ -334,7 +335,7 @@ export function buildInterior(b) {
   }
 
   // 背墙挂轴 + 门槛地垫（通用陈设）
-  const scrollMat = toon({ map: scrollTexture(b.id.length % 3), side: THREE.DoubleSide, transparent: true });
+  const scrollMat = toon({ map: scrollTexture(b.id.length % 3), side: THREE.DoubleSide, transparent: true, useAlpha: true });
   for (const sz of [-1, 1]) {
     const sc = new THREE.Mesh(flat(new THREE.PlaneGeometry(0.62, 1.5)), scrollMat);
     sc.position.set(backX + facing * 0.08, 1.6, cz + sz * (hd * 0.5));

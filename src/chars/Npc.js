@@ -16,7 +16,7 @@ function makeLabel(name, role) {
   c.width = 256; c.height = 72;
   const g = c.getContext('2d');
   // 纸签
-  g.fillStyle = 'rgba(245,236,210,0.88)';
+  g.fillStyle = 'rgba(245,236,210,0.97)';
   g.beginPath();
   g.roundRect(8, 6, 240, 60, 10);
   g.fill();

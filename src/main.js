@@ -30,6 +30,7 @@ if (TEST_PARAMS.get('autostart') === '1') {
     }
     // 先设自由相机，再启动 → 首帧即目标取景（截图/探针用）
     const view = TEST_PARAMS.get('view') || 'aerial';
+    if (TEST_PARAMS.get('t')) g._t = parseFloat(TEST_PARAMS.get('t')); // 设定动画相位
     if (view === 'spawn') {
       g.player._freeCam = false;               // 默认出生视角（第三人称）
       g.player.px = 0; g.player.pz = -18;
@@ -42,6 +43,10 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g.player.px = -18; g.player.pz = 10;            // 集市街头
       g.camera.position.set(-18, 3.2, 4);
       g.camera.lookAt(0, 1.2, 12);
+    } else if (view === 'bridge') {
+      g.player.px = 0; g.player.pz = 30;              // 桥上俯瞰河流/船只
+      g.camera.position.set(8, 7.5, 36);
+      g.camera.lookAt(-14, 1, 20);
     } else if (view === 'shop') {
       g.player.px = 0; g.player.pz = -55;             // 近看店铺立面
       g.camera.position.set(3.2, 2.6, -60);
@@ -324,6 +329,7 @@ window.__probe = (g) => {
   snap.width = renderer.domElement.width;
   snap.height = renderer.domElement.height;
   const ctx = snap.getContext('2d');
+  try { g.renderer.render(g.scene, g.camera); } catch {} // 直接渲染原始帧（绕过后处理）
   ctx.drawImage(renderer.domElement, 0, 0);
   const v = new THREE.Vector3();
   const sample = (x, y, z, label) => {
@@ -370,8 +376,9 @@ window.__probe = (g) => {
   // 反光检测：统计 >244 亮度像素占比；灰色平面：低饱和、中亮度
   try {
     const idata = ctx.getImageData(0, 0, snap.width, snap.height).data;
-    let bright = 0, nn = 0, gray = 0;
+    let bright = 0, nn = 0, gray = 0, blueGray = 0;
     let gx0 = 1e9, gy0 = 1e9, gx1 = -1, gy1 = -1;
+    const bgPts = [];
     for (let y = 0; y < snap.height; y += 3) {
       for (let x = 0; x < snap.width; x += 3) {
         const i = (y * snap.width + x) * 4;
@@ -383,11 +390,16 @@ window.__probe = (g) => {
           if (x < gx0) gx0 = x; if (x > gx1) gx1 = x;
           if (y < gy0) gy0 = y; if (y > gy1) gy1 = y;
         }
+        if (mx - mn < 45 && b >= g && g >= r && mx > 45 && mx < 225) {
+          blueGray++;
+          if (bgPts.length < 6) bgPts.push(`${x},${y}`);
+        }
         nn++;
       }
     }
     parts.push(`glare=${(100 * bright / nn).toFixed(1)}%`);
     parts.push(`gray=${(100 * gray / nn).toFixed(1)}% bbox=(${gx0},${gy0})-(${gx1},${gy1})`);
+    parts.push(`blueGray=${blueGray} @${bgPts.join(' ')}`);
     // 灰色区域原始采样
     const rawP = (sx, sy, lbl) => {
       const dd = ctx.getImageData(sx, sy, 1, 1).data;

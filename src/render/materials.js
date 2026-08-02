@@ -498,7 +498,9 @@ export const LIGHT_UNIFORMS = {
   uRimColor: { value: new THREE.Color('#ffd9a0') },
   uRimPower: { value: 2.4 },
   uSteps: { value: 3.0 },
-  uBoost: { value: 0 },   // 室内环境光增益，避免背阴面压成灰暗
+  uBoost: { value: 0 },    // 室内环境光增益，避免背阴面压成灰暗
+  uOpacity: { value: 1 },  // 透明度
+  uUseAlpha: { value: 0 }, // 是否使用贴图 alpha（卷轴等镂空）
 };
 
 // 手动雾效（避免 three 内置 fog 系统与自定义 shader 的 uniform 冲突）
@@ -532,6 +534,8 @@ uniform vec3 uRimColor;
 uniform float uRimPower;
 uniform float uSteps;
 uniform float uBoost;
+uniform float uOpacity;
+uniform float uUseAlpha;
 uniform vec3 uFogColor;
 uniform float uFogNear;
 uniform float uFogFar;
@@ -540,8 +544,11 @@ varying vec3 vView;
 varying vec2 vUv;
 varying float vFogDepth;
 void main() {
+  vec4 tex = texture2D(uMap, vUv);
   vec3 base = uColor;
-  base *= texture2D(uMap, vUv).rgb;
+  base *= tex.rgb;
+  float alpha = uOpacity;
+  if (uUseAlpha > 0.5) { alpha *= tex.a; if (alpha < 0.1) discard; } // 卷轴镂空
   float ndl = max(dot(normalize(vNormal), normalize(uSunDir)), 0.0);
   float d = floor(ndl * uSteps + 0.55) / uSteps;   // 量化明暗
   d = max(d, 0.22);                                // 暗部保底，避免背阴面压成暗灰
@@ -553,7 +560,7 @@ void main() {
   col *= base;
   float fogFactor = smoothstep(uFogNear, uFogFar, vFogDepth);
   col = mix(col, uFogColor, clamp(fogFactor, 0.0, 1.0));
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(col, alpha);
 }`;
 
 const WHITE_TEX = new THREE.CanvasTexture((() => {
@@ -563,12 +570,14 @@ const WHITE_TEX = new THREE.CanvasTexture((() => {
 })());
 
 // 每个材质共享同一份光照/雾 uniforms 的 value 对象 → 全局调光一次即全部生效
-export function toon({ color = 0xffffff, map = null, transparent = false, opacity = 1, side = null, boost = 0 } = {}) {
+export function toon({ color = 0xffffff, map = null, transparent = false, opacity = 1, side = null, boost = 0, useAlpha = false } = {}) {
   const uniforms = Object.assign({}, {
     uColor: { value: new THREE.Color(color) },
     uMap: { value: map || WHITE_TEX },
   }, LIGHT_UNIFORMS, FOG_UNIFORMS);
-  if (boost > 0) uniforms.uBoost = { value: boost }; // 室内材质独立环境光增益
+  if (boost > 0) uniforms.uBoost = { value: boost };      // 室内材质独立环境光增益
+  if (transparent) uniforms.uOpacity = { value: opacity }; // 透明材质独立透明度
+  if (useAlpha) uniforms.uUseAlpha = { value: 1 };         // 卷轴等镂空
   const mat = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: toonVert,
