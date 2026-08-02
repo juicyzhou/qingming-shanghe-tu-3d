@@ -226,22 +226,28 @@ window.__qa = (g) => {
   const cam3 = new THREE.Vector3(0, 0, -1).applyQuaternion(g.camera.quaternion);
   const exp3 = new THREE.Vector3(Math.sin(1.0), 0, Math.cos(1.0));
   out.push('cam3Align=' + (Math.abs(cam3.x - exp3.x) < 0.05 && Math.abs(cam3.z - exp3.z) < 0.05));
-  // 7) 鼠标右移 → 相机应右转（forward.x 增大）
-  g.player.viewMode = 3; g.player.yaw = 0; g.player.pitch = 0;
+  // 7) 鼠标右移 → 相机前向应朝「角色右侧 F×U」旋转（右转）
+  g.player.viewMode = 3; g.player.yaw = 0.8; g.player.pitch = 0;
   g.player.px = 0; g.player.pz = -18;
-  for (let i = 0; i < 30; i++) g.player.update(0.016, g.input);
-  const f0 = new THREE.Vector3(0, 0, -1).applyQuaternion(g.camera.quaternion).x;
-  g.input.mouse.dx = 200; g.input.mouse.dy = 0;
+  for (let i = 0; i < 40; i++) g.player.update(0.016, g.input);
+  const Rvec = new THREE.Vector3(-Math.cos(g.player.yaw), 0, Math.sin(g.player.yaw)); // 角色右侧
+  const F0 = new THREE.Vector3(0, 0, -1).applyQuaternion(g.camera.quaternion);
+  const d0 = F0.dot(Rvec);
+  g.input.mouse.dx = 300; g.input.mouse.dy = 0;
   g.player.update(0.016, g.input);
-  const f1 = new THREE.Vector3(0, 0, -1).applyQuaternion(g.camera.quaternion).x;
-  out.push(`lookRight f0=${f0.toFixed(2)} f1=${f1.toFixed(2)} turnRight=${f1 > f0}`);
-  // 8) 按 D → 玩家应向相机右侧移动（yaw=0 时应 +x）
-  g.input.mouse.dx = 0; g.player.yaw = 0;
+  const F1 = new THREE.Vector3(0, 0, -1).applyQuaternion(g.camera.quaternion);
+  const d1 = F1.dot(Rvec);
+  out.push(`lookRight turnRight=${d1 > d0} (dot ${d0.toFixed(2)}→${d1.toFixed(2)})`);
+  // 8) 按 D → 玩家应移向屏幕右侧（世界点→屏幕投影 x 增大）
+  g.input.mouse.dx = 0; g.player.yaw = Math.PI; g.player.pitch = 0;
   g.player.px = 0; g.player.pz = -18;
+  for (let i = 0; i < 40; i++) g.player.update(0.016, g.input);
+  const proj0 = new THREE.Vector3(g.player.px, 1, g.player.pz).project(g.camera).x;
   g.input.keys.add('KeyD');
-  for (let i = 0; i < 10; i++) g.player.update(0.016, g.input);
+  for (let i = 0; i < 15; i++) g.player.update(0.016, g.input);
   g.input.keys.delete('KeyD');
-  out.push(`strafeRight px=${g.player.px.toFixed(2)} (yaw=0 应 > 0)`);
+  const proj1 = new THREE.Vector3(g.player.px, 1, g.player.pz).project(g.camera).x;
+  out.push(`strafeScreen right=${proj1 > proj0} (${proj0.toFixed(2)}→${proj1.toFixed(2)})`);
   // 9) 触屏交谈按钮：有目标显示、无目标隐藏
   if (g.touch && g.touch.enabled) {
     g.player.px = 1.5; g.player.pz = 16.5;
