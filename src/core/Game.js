@@ -49,6 +49,14 @@ export class Game {
     this.touch = new TouchControls(this.input); // 触屏虚拟摇杆/按钮（非触屏为 no-op）
     this.world = new World(this.scene);
 
+    if (qp.get('debug') === '1') { // 调试：点按钮射线检测屏幕中心
+      const b = document.createElement('button');
+      b.textContent = '射线';
+      b.style.cssText = 'position:fixed;left:50%;bottom:12%;transform:translateX(-50%);z-index:80;padding:10px 22px;font-size:16px;border-radius:10px;border:2px solid #8a6a44;background:#8a3a20;color:#f3e8cd;';
+      b.onclick = () => this._debugRay();
+      document.body.appendChild(b);
+    }
+
     // ---- 玩家 ----
     this.player = new Player();
     this.player.camera = this.camera;
@@ -115,7 +123,27 @@ export class Game {
     this.input.endFrame();
   }
 
+  _debugRay() {
+    try {
+      const rc = new THREE.Raycaster();
+      rc.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+      rc.far = 60;
+      const cand = [];
+      this.scene.traverse(o => { if (o.isMesh && o.matrixWorld && o.visible) cand.push(o); });
+      const hits = rc.intersectObjects(cand, false);
+      if (hits.length) {
+        const h = hits[0];
+        const m = h.object.material;
+        let info = `${h.object.geometry?.type || '?'} @(${h.point.x.toFixed(1)},${h.point.y.toFixed(1)},${h.point.z.toFixed(1)})`;
+        if (m && m.uniforms && m.uniforms.uColor) info += ` hex=${m.uniforms.uColor.value.getHexString()}`;
+        if (m && m.map) info += ' map=y';
+        this.hud.toast('命中: ' + info);
+      } else this.hud.toast('命中: 无');
+    } catch (e) { this.hud.toast('射线err'); }
+  }
+
   update(dt) {
+    if (this.input.wasPressed('KeyF')) this._debugRay();
     if (this.input.wasPressed('KeyV') && !this.hud.dialogueOpen && !this._inside) this.player.toggleView();
     if (this.input.wasPressed('KeyJ')) this.hud.toggleQuestLog(this);
     if (this.input.wasPressed('KeyE')) this.tryInteract();
