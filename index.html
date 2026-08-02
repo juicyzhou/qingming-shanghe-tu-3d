@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D《清明上河图》· 汴京漫游</title>
+  <meta name="description" content="以《清明上河图》为蓝本的 3D 沉浸式漫游游戏：纯程序化资源，零外部依赖，直接部署于 GitHub Pages。" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f0e6d0;
+      font-family: "KaiTi", "STKaiti", "Kaiti SC", "FangSong", "SimSun", serif;
+    }
+    #app, #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

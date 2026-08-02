@@ -1,0 +1,18 @@
+{
+  "name": "qmsht-3d",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "3D《清明上河图》沉浸式漫游游戏 - 纯程序化资源，可直接部署 GitHub Pages",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
+  }
+}
