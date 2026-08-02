@@ -248,6 +248,32 @@ window.__qa = (g) => {
   g.input.keys.delete('KeyD');
   const proj1 = new THREE.Vector3(g.player.px, 1, g.player.pz).project(g.camera).x;
   out.push(`strafeScreen right=${proj1 > proj0} (${proj0.toFixed(2)}→${proj1.toFixed(2)})`);
+  // 9) 四方向全面检测：W/S=远离/靠近相机，D/A=屏幕右/左
+  const moveCheck = (key, yaw) => {
+    g.player.viewMode = 3; g.player.yaw = yaw; g.player.pitch = 0;
+    g.player.px = 0; g.player.pz = -18;
+    for (let i = 0; i < 40; i++) g.player.update(0.016, g.input);
+    const d0 = g.camera.position.distanceTo(new THREE.Vector3(g.player.px, 0, g.player.pz));
+    const sx0 = new THREE.Vector3(g.player.px, 1, g.player.pz).project(g.camera).x;
+    g.input.keys.add(key);
+    for (let i = 0; i < 15; i++) g.player.update(0.016, g.input);
+    g.input.keys.delete(key);
+    const d1 = g.camera.position.distanceTo(new THREE.Vector3(g.player.px, 0, g.player.pz));
+    const sx1 = new THREE.Vector3(g.player.px, 1, g.player.pz).project(g.camera).x;
+    return [d1 - d0, sx1 - sx0];
+  };
+  const Wm = moveCheck('KeyW', Math.PI), Sm = moveCheck('KeyS', Math.PI);
+  const Dm = moveCheck('KeyD', Math.PI), Am = moveCheck('KeyA', Math.PI);
+  out.push(`move4 W:away=${Wm[0] > 0} S:toward=${Sm[0] < 0} D:right=${Dm[1] > 0} A:left=${Am[1] < 0}`);
+  // 10) 第一人称：按 W 应沿相机前向移动
+  g.player.viewMode = 1; g.player.yaw = 0.3; g.player.pitch = 0;
+  g.player.px = 0; g.player.pz = -18;
+  g.input.keys.add('KeyW');
+  for (let i = 0; i < 15; i++) g.player.update(0.016, g.input);
+  g.input.keys.delete('KeyW');
+  const camFp = new THREE.Vector3(0, 0, -1).applyQuaternion(g.camera.quaternion);
+  const mDir = new THREE.Vector3(g.player.px - 0, 0, g.player.pz - (-18)).normalize(); // 位移方向
+  out.push(`fpW align=${Math.abs(camFp.x - mDir.x) < 0.1 && Math.abs(camFp.z - mDir.z) < 0.1}`);
   // 9) 触屏交谈按钮：有目标显示、无目标隐藏
   if (g.touch && g.touch.enabled) {
     g.player.px = 1.5; g.player.pz = 16.5;

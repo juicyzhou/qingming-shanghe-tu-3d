@@ -34,6 +34,9 @@ export class Player extends Character {
     return target;
   }
 
+  // 方向约定（保持各模式一致，勿随意改动）：
+  //   yaw=0 → 面向 +z；前向 F=(sin yaw, 0, cos yaw)；角色右侧 = F×上向 = (−cos yaw, 0, sin yaw)
+  //   鼠标/触屏右移 → yaw 减小 → 视角右转；第一人称相机 rotation.y = yaw + π
   update(dt, input) {
     // ---- 视角（右移鼠标/右拖 → 右转） ----
     const sens = 0.0021;
@@ -41,7 +44,7 @@ export class Player extends Character {
     this.pitch -= input.mouse.dy * sens;
     this.pitch = Math.max(-0.9, Math.min(0.6, this.pitch));
 
-    // ---- 移动：角色右侧 = 前向 F × 上向 U = (−cos yaw, 0, sin yaw) ----
+    // ---- 移动：W前/S后/D右/A左 ----
     const fwd = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
     const right = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
     const dir = new THREE.Vector3();
