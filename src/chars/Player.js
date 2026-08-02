@@ -74,6 +74,9 @@ export class Player extends Character {
     this.position.y = this.groundY;
     super.update(dt, moving ? (run ? RUN : WALK) : 0);
 
+    // 第一人称隐藏自身身体（否则低头会看到自己角色挡视线）
+    this.visible = this.viewMode === 3;
+
     // ---- 相机 ----
     this._applyCamera(dt);
   }
