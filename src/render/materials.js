@@ -498,6 +498,7 @@ export const LIGHT_UNIFORMS = {
   uRimColor: { value: new THREE.Color('#ffeed2') },
   uRimPower: { value: 2.4 },
   uSteps: { value: 3.0 },
+  uBoost: { value: 0 },   // 室内环境光增益，避免背阴面压成灰暗
 };
 
 // 手动雾效（避免 three 内置 fog 系统与自定义 shader 的 uniform 冲突）
@@ -530,6 +531,7 @@ uniform vec3 uAmbient;
 uniform vec3 uRimColor;
 uniform float uRimPower;
 uniform float uSteps;
+uniform float uBoost;
 uniform vec3 uFogColor;
 uniform float uFogNear;
 uniform float uFogFar;
@@ -543,7 +545,7 @@ void main() {
   float ndl = max(dot(normalize(vNormal), normalize(uSunDir)), 0.0);
   float d = floor(ndl * uSteps + 0.55) / uSteps;   // 量化明暗
   d = max(d, 0.12);
-  vec3 col = uAmbient + uSunColor * d;
+  vec3 col = uAmbient * (1.0 + uBoost) + uSunColor * d;
   float rim = pow(1.0 - max(dot(normalize(vNormal), normalize(vView)), 0.0), uRimPower);
   col += uRimColor * rim * 0.9;
   col *= base;
@@ -559,11 +561,12 @@ const WHITE_TEX = new THREE.CanvasTexture((() => {
 })());
 
 // 每个材质共享同一份光照/雾 uniforms 的 value 对象 → 全局调光一次即全部生效
-export function toon({ color = 0xffffff, map = null, transparent = false, opacity = 1, side = null } = {}) {
+export function toon({ color = 0xffffff, map = null, transparent = false, opacity = 1, side = null, boost = 0 } = {}) {
   const uniforms = Object.assign({}, {
     uColor: { value: new THREE.Color(color) },
     uMap: { value: map || WHITE_TEX },
   }, LIGHT_UNIFORMS, FOG_UNIFORMS);
+  if (boost > 0) uniforms.uBoost = { value: boost }; // 室内材质独立环境光增益
   const mat = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: toonVert,

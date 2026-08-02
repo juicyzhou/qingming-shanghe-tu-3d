@@ -81,10 +81,10 @@ export class Player extends Character {
     if (this._freeCam) return; // 测试用自由相机
     const groundY = this.groundY;
     if (this.viewMode === 1) {
-      // 第一人称：头部位置 + 朝向
+      // 第一人称：头部位置 + 朝向（相机 -z 必须对准移动正前方 sin/cos yaw）
       cam.position.set(this.px, groundY + this.H * 0.92, this.pz);
       cam.rotation.order = 'YXZ';
-      cam.rotation.set(this.pitch, this.yaw, 0);
+      cam.rotation.set(this.pitch, this.yaw + Math.PI, 0);
       this.camPos.copy(cam.position);
     } else {
       // 第三人称：背后跟随 + 平滑

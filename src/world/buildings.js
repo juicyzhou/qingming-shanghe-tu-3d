@@ -124,15 +124,19 @@ function buildShop(b) {
   g.add(part(new THREE.BoxGeometry(0.1, 0.12, d), beamMat, F + 0.03, 1.5, 0));        // 中枋
 
   // ---- 门（开张：暗门洞 + 斜开门扇）+ 门框 + 台阶 ----
-  const doorway = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.7, 2.4)), toon({ color: 0x241a0e }));
-  doorway.position.set(F - 0.14, 1.2, 0);
+  const doorwayMat = toon({ color: 0x241a0e });
+  const doorway = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.7, 2.4)), doorwayMat);
+  doorway.rotation.y = Math.PI / 2;         // 与墙面平行、朝外
+  doorway.position.set(F - 0.16, 1.2, 0);
   g.add(doorway);
   const hinge = new THREE.Group();
-  hinge.position.set(F + 0.02, 1.2, -0.85);
-  const doorLeaf = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.7, 2.4)), toon({ map: doorTexture() }));
-  doorLeaf.position.set(0.85, 0, 0);
+  hinge.position.set(F + 0.02, 1.2, -0.85); // 门轴在门洞一侧
+  const doorLeafMat = toon({ map: doorTexture(), side: THREE.DoubleSide });
+  const doorLeaf = new THREE.Mesh(flat(new THREE.PlaneGeometry(1.7, 2.4)), doorLeafMat);
+  doorLeaf.rotation.y = Math.PI / 2;        // 门扇平面对齐墙面（宽沿 z）
+  doorLeaf.position.set(0, 0, 0.85);
   hinge.add(doorLeaf);
-  hinge.rotation.y = -1.15;                 // 门扇向内打开
+  hinge.rotation.y = -1.15;                 // 门扇向内打开，从外可见
   g.add(hinge);
   g.add(part(new THREE.BoxGeometry(0.14, 2.5, 2.0), colMat(), F - 0.04, 1.25, 0));    // 门框
   g.add(part(new THREE.BoxGeometry(2.1, 0.18, 1.2), darkWood(), F + 0.9, 0.09, 0));  // 台阶

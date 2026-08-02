@@ -6,9 +6,11 @@ import { EXTRA_COLLIDERS } from './layout.js';
 //  店铺内室：可进入的屋内空间 + 各店专属陈设（世界坐标）
 // ============================================================
 
-const wood = () => toon({ color: 0x9a7548, map: woodTexture() });
-const darkWood = () => toon({ color: 0x6e4f2c });
-const wallMat = () => toon({ color: 0xd5c7a2, map: wallTexture() });
+// 室内材质统一加暖色环境光增益，避免背阴墙/顶被压成灰暗平面
+const BOOST = 0.8;
+const wood = () => toon({ color: 0x9a7548, map: woodTexture(), boost: BOOST });
+const darkWood = () => toon({ color: 0x6e4f2c, boost: BOOST });
+const wallMat = () => toon({ color: 0xd5c7a2, map: wallTexture(), boost: BOOST });
 
 const colliders = [];
 const addCol = (x, z, hw, hd) => colliders.push({ x, z, hw, hd });

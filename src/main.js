@@ -31,6 +31,12 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g.player.px = 0; g.player.pz = -55;             // 近看店铺立面
       g.camera.position.set(3.2, 2.6, -60);
       g.camera.lookAt(-11, 2.6, -68);
+    } else if (view === 'interior') {
+      const int0 = g.world.interiors[0];
+      g._enterInterior(int0);
+      g.player.px = int0.spawnX; g.player.pz = int0.spawnZ;
+      g.camera.position.set(int0.def.x - 0.5, 1.5, int0.def.z);
+      g.camera.lookAt(int0.def.x - int0.def.w / 2, 1.5, int0.def.z); // 看背墙
     } else {
       g.camera.position.set(0, 82, 58);               // 鸟瞰全景
       g.camera.lookAt(0, 0, -12);
@@ -150,6 +156,15 @@ window.__selftest = (g) => {
   const restore = g.input.suspendLock === false;
   const npcResumed = g._dialogNpc === null;
   out.push(`DIALOG open=${dlgOpen} suspend=${suspend} npcPaused=${npcPaused} closed=${dlgClosed} restore=${restore} npcResumed=${npcResumed}`);
+  // 第一人称相机朝向必须等于移动正前方（sin yaw, cos yaw）
+  g.player.viewMode = 1; g.player.yaw = 0.5; g.player.pitch = 0;
+  g.player.px = 0; g.player.pz = 0;
+  g.player.update(0.016, g.input);
+  const camFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(g.camera.quaternion);
+  const expFwd = new THREE.Vector3(Math.sin(0.5), 0, Math.cos(0.5));
+  const fwdAlign = Math.abs(camFwd.x - expFwd.x) < 0.05 && Math.abs(camFwd.z - expFwd.z) < 0.05;
+  out.push(`VIEW fwdAlign=${fwdAlign} cam=(${camFwd.x.toFixed(2)},${camFwd.z.toFixed(2)}) exp=(${expFwd.x.toFixed(2)},${expFwd.z.toFixed(2)})`);
+  g.player.viewMode = 3;
   return out.join(' | ');
 };
 
@@ -186,6 +201,10 @@ window.__probe = (g) => {
   parts.push(sample(-6.9, 1.5, -70, 'clinicBanner'));
   parts.push(sample(-11.5, 3.3, -70, 'clinicSign'));
   parts.push(sample(-10.3, 2.6, -70, 'clinicBeam'));
+  // 屋内探针（view=interior 时可见）
+  parts.push(sample(16.4, 1.5, -70, 'intWall'));
+  parts.push(sample(13, 2.9, -69, 'intCeil'));
+  parts.push(sample(13, 0.1, -69, 'intFloor'));
   return parts.join(' | ');
 };
 
