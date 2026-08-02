@@ -43,6 +43,14 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g.player.px = -18; g.player.pz = 10;            // 集市街头
       g.camera.position.set(-18, 3.2, 4);
       g.camera.lookAt(0, 1.2, 12);
+    } else if (view === 'street2') {
+      g.player.px = 0; g.player.pz = -22;             // 主街纵览：店铺两侧+街上行人
+      g.camera.position.set(0, 3.6, -30);
+      g.camera.lookAt(0, 1.4, -68);
+    } else if (view === 'street3') {
+      g.player.px = 0; g.player.pz = -46;             // 斜向主街：两侧店铺 + 行人
+      g.camera.position.set(2.5, 3.0, -44);
+      g.camera.lookAt(-8, 1.6, -58);
     } else if (view === 'bridge') {
       g.player.px = 0; g.player.pz = 30;              // 桥上俯瞰河流/船只
       g.camera.position.set(8, 7.5, 36);
@@ -329,7 +337,7 @@ window.__probe = (g) => {
   snap.width = renderer.domElement.width;
   snap.height = renderer.domElement.height;
   const ctx = snap.getContext('2d');
-  try { g.renderer.render(g.scene, g.camera); } catch {} // 直接渲染原始帧（绕过后处理）
+  try { g.composer.render(); } catch { try { g.renderer.render(g.scene, g.camera); } catch {} } // 后处理帧
   ctx.drawImage(renderer.domElement, 0, 0);
   const v = new THREE.Vector3();
   const sample = (x, y, z, label) => {
@@ -400,6 +408,15 @@ window.__probe = (g) => {
     parts.push(`glare=${(100 * bright / nn).toFixed(1)}%`);
     parts.push(`gray=${(100 * gray / nn).toFixed(1)}% bbox=(${gx0},${gy0})-(${gx1},${gy1})`);
     parts.push(`blueGray=${blueGray} @${bgPts.join(' ')}`);
+    // 导出当前帧为 base64（截图用）
+    try {
+      const small = document.createElement('canvas');
+      small.width = 720;
+      small.height = Math.round(720 * snap.height / snap.width);
+      const sctx = small.getContext('2d');
+      sctx.drawImage(snap, 0, 0, small.width, small.height);
+      parts.push('IMG' + small.toDataURL('image/jpeg', 0.85));
+    } catch { parts.push('IMGnone'); }
     // 灰色区域原始采样
     const rawP = (sx, sy, lbl) => {
       const dd = ctx.getImageData(sx, sy, 1, 1).data;
