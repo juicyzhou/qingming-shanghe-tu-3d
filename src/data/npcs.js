@@ -29,13 +29,13 @@ export const NPC_DEFS = [
   // ---- 关键任务 NPC ----
   n('huolang', '王货郎', 'huolang', 1.5, 16.5, { behavior: 'stand' }),
   n('tea_stand', '孙婆婆', 'cook', 3, 45.6, { behavior: 'stand' }),
-  n('cha_bo', '茶博士', 'tea', 6.8, -55, { behavior: 'stand' }),
+  n('cha_bo', '茶博士', 'tea', 5.4, -55, { behavior: 'stand' }),             // 茶肆门前
   n('shuoshuren', '崔说书', 'storyteller', -10, 44, { behavior: 'stand', home: { x: -26, z: 14 }, heading: -1.2 }),
-  n('daifu', '赵大夫', 'doctor', 6.8, -70, { behavior: 'stand' }),
+  n('daifu', '赵大夫', 'doctor', -5.4, -70, { behavior: 'stand' }),          // 药铺门前
   n('chuanfu', '船老大', 'boatman', 13, 19.5, { behavior: 'stand' }),
   n('yayi', '衙役刘三', 'yamen', -1.2, -88.2, { behavior: 'stand' }),
   n('shoujiang', '守将韩威', 'general', 3.2, -88.5, { behavior: 'stand', heading: 0 }),
-  n('buzhuang', '沈掌柜', 'weaver', 6.8, -55, { behavior: 'stand' }),
+  n('buzhuang', '沈掌柜', 'weaver', -5.2, -55, { behavior: 'stand' }),       // 布庄门前
   n('tangren', '糖人张', 'vendor', -17.6, 5.6, { behavior: 'stand' }),
 
   // ---- 街市群像 ----
@@ -55,7 +55,7 @@ export const NPC_DEFS = [
   n('', '苗家嫂子', 'woman', 3, -8),
   n('', '秦木匠', 'vendor', -16, 16),
   n('', '许半仙', 'vendor', -28, 20),
-  n('', '刘婶', 'cook', -14, 24),
+  n('', '刘婶', 'cook', -7.5, 20.5),
   n('', '潘货郎', 'huolang', -22, -2),
   n('', '罗班头', 'acrobat', -30, 8),
   n('', '高小猴', 'child', -24, 12, { behavior: 'wander' }),

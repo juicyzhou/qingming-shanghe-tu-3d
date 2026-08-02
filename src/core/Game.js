@@ -222,7 +222,10 @@ export class Game {
     int.group.visible = true;
     int.exterior.visible = false;
     this.player.inside = int;
-    if (this.player.viewMode === 3) { this._prevViewMode = 3; this.player.viewMode = 1; }
+    if (this.player.viewMode !== 1) {   // 始终先记住进店前的视角，出店恢复
+      this._prevViewMode = this.player.viewMode;
+      this.player.viewMode = 1;
+    }
     this.audio?.blip();
     this.hud.toast(`走进${int.def.name}`);
   }

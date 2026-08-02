@@ -50,7 +50,7 @@ export const STALLS = [
   { id: 'clothstall', x: -30, z: 2,  label: '布摊' },
   { id: 'carpenter', x: -16, z: 16, label: '木器摊' },
   { id: 'divine',    x: -28, z: 20, label: '卦摊' },
-  { id: 'cool',      x: -14, z: 24, label: '凉粉摊' },
+  { id: 'cool',      x: -8,  z: 20, label: '凉粉摊' },
   { id: 'tea_stand', x: 3,   z: 46, label: '桥头茶摊' },
   { id: 'fruit',     x: -10, z: 48, label: '果摊' },
   { id: 'fish',      x: -20, z: 52, label: '鱼摊' },
@@ -68,7 +68,10 @@ function treeSeed(x, z, r = 1.6) {
 // 北岸柳行
 for (let x = -60; x <= 60; x += 6) {
   if (Math.abs(x) < 9) continue;         // 避开桥
-  treeSeed(x + rf(-0.8, 0.8), 19.2 + rf(-1, 1));
+  const tx = x + rf(-0.8, 0.8);
+  const tz = 19.2 + rf(-1, 1);
+  if (tx > 6.5 && tx < 18.5 && tz > 15 && tz < 21.5) continue; // 栈桥区域不留树
+  treeSeed(tx, tz);
 }
 // 南岸柳行
 for (let x = -60; x <= 50; x += 7) {

@@ -19,10 +19,25 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g._running = false; // 自测无需持续渲染
       return;
     }
+    if (TEST_PARAMS.get('qa') === '1') {
+      g.start();
+      const div = document.createElement('div');
+      div.id = 'probe-report';
+      div.textContent = window.__qa(g);
+      document.body.appendChild(div);
+      g._running = false;
+      return;
+    }
     // 先设自由相机，再启动 → 首帧即目标取景（截图/探针用）
     const view = TEST_PARAMS.get('view') || 'aerial';
-    g.player._freeCam = true;
-    g.player.px = 0; g.player.pz = 30;
+    if (view === 'spawn') {
+      g.player._freeCam = false;               // 默认出生视角（第三人称）
+      g.player.px = 0; g.player.pz = -18;
+      g.player.yaw = Math.PI; g.player.pitch = -0.12;
+    } else {
+      g.player._freeCam = true;
+      g.player.px = 0; g.player.pz = 30;
+    }
     if (view === 'street') {
       g.player.px = -18; g.player.pz = 10;            // 集市街头
       g.camera.position.set(-18, 3.2, 4);
@@ -168,6 +183,52 @@ window.__selftest = (g) => {
   return out.join(' | ');
 };
 
+window.__qa = (g) => {
+  const out = [];
+  // 1) 10 家店铺全部可进/可出
+  let okIn = true, okOut = true;
+  for (const int of g.world.interiors) {
+    g.player.px = int.spawnX; g.player.pz = int.spawnZ;
+    g.update(0.016);
+    if (g.player.inside !== int) { okIn = false; out.push('enterFail:' + int.def.id); }
+    g.player.px = int.exitX; g.player.pz = int.exitZ;
+    g.update(0.016);
+    if (g.player.inside) { okOut = false; out.push('exitFail:' + int.def.id); }
+  }
+  out.push('interiorIn=' + okIn + ' out=' + okOut);
+  // 2) 出生点无障碍
+  out.push('spawnClear=' + !collides(0, -18));
+  // 3) NPC 落水检查
+  const inWater = g.npcList.filter(n => n.position.z > 23.5 && n.position.z < 36.5).map(n => n.name);
+  out.push('npcsInRiver=' + inWater.length + (inWater.length ? ':' + inWater.join(',') : ''));
+  // 4) 关键 NPC 所在点可步行
+  for (const id of ['cha_bo', 'daifu', 'buzhuang', 'huolang', 'chuanfu', 'yayi', 'shoujiang', 'tangren']) {
+    const npc = g.npcs.get(id);
+    if (npc) out.push(id + 'Reach=' + (!collides(npc.position.x, npc.position.z)));
+  }
+  // 5) 关键 NPC 对话开关无异常
+  let dlgOk = true;
+  for (const id of ['huolang', 'cha_bo', 'daifu', 'buzhuang', 'chuanfu', 'yayi', 'shoujiang', 'tangren', 'tea_stand', 'shuoshuren']) {
+    const npc = g.npcs.get(id);
+    if (!npc) continue;
+    g.player.px = npc.position.x; g.player.pz = npc.position.z;
+    try {
+      g.tryInteract();
+      const open = g.hud.dialogueOpen;
+      g._closeDialogue();
+      if (!open) dlgOk = false;
+    } catch { dlgOk = false; out.push('dlgErr:' + id); }
+  }
+  out.push('dialogs=' + dlgOk);
+  // 6) 第三人称相机朝向=移动正前（等相机平滑收敛）
+  g.player.viewMode = 3; g.player.yaw = 1.0; g.player.pitch = 0;
+  for (let i = 0; i < 60; i++) g.player.update(0.016, g.input);
+  const cam3 = new THREE.Vector3(0, 0, -1).applyQuaternion(g.camera.quaternion);
+  const exp3 = new THREE.Vector3(Math.sin(1.0), 0, Math.cos(1.0));
+  out.push('cam3Align=' + (Math.abs(cam3.x - exp3.x) < 0.05 && Math.abs(cam3.z - exp3.z) < 0.05));
+  return out.join(' | ');
+};
+
 window.__probe = (g) => {
   // 采样世界关键坐标点在屏幕上的颜色
   const { renderer, camera } = g;
@@ -189,6 +250,7 @@ window.__probe = (g) => {
   parts.push(`cam=(${camera.position.x.toFixed(1)},${camera.position.y.toFixed(1)},${camera.position.z.toFixed(1)})`);
   parts.push(`ply=(${g.player.px.toFixed(1)},${g.player.pz.toFixed(1)}) free=${g.player._freeCam}`);
   parts.push('meshes=' + (() => { let n = 0; g.scene.traverse(o => n++); return n; })());
+  parts.push(`calls=${g.renderer.info.render.calls} tris=${g.renderer.info.render.triangles}`);
   parts.push(sample(20, 0.3, 30, 'river'));
   parts.push(sample(0, 0.05, -40, 'roadN'));
   parts.push(sample(11.5, 6.5, -70, 'roof'));

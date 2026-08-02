@@ -22,7 +22,7 @@ function buildInteractables(scene) {
     leaf.rotation.y = i;
     herbG.add(leaf);
   }
-  herbG.position.set(9.5, 0, 18.6);
+  herbG.position.set(9.5, 0.45, 18.6); // 抬到栈桥面之上
   group.add(herbG);
   items.push({ id: 'herb', label: '药草', x: 9.5, z: 18.6, group: herbG });
 
@@ -37,7 +37,7 @@ function buildInteractables(scene) {
     roll.position.set(0, 0.25, (i - 1) * 0.5);
     clothG.add(roll);
   }
-  clothG.position.set(14.2, 0.05, 20.4);
+  clothG.position.set(14.2, 0.42, 20.4);
   group.add(clothG);
   items.push({ id: 'cloth_bundle', label: '布匹', x: 14.2, z: 20.4, group: clothG });
 
