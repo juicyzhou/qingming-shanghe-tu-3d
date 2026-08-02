@@ -544,7 +544,7 @@ void main() {
   base *= texture2D(uMap, vUv).rgb;
   float ndl = max(dot(normalize(vNormal), normalize(uSunDir)), 0.0);
   float d = floor(ndl * uSteps + 0.55) / uSteps;   // 量化明暗
-  d = max(d, 0.12);
+  d = max(d, 0.22);                                // 暗部保底，避免背阴面压成暗灰
   vec3 col = uAmbient * (1.0 + uBoost) + uSunColor * d;
   // 边缘光：仅向阳面、强度克制，避免反光发白
   float rim = pow(1.0 - max(dot(normalize(vNormal), normalize(vView)), 0.0), uRimPower);

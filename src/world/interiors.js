@@ -203,6 +203,14 @@ function lantern(x, y, z) {
 // ============================================================
 //  按店铺类型组装内室
 // ============================================================
+
+// 各店掌柜站位（避开家具的预留空位，经碰撞核对）
+const KEEPER_POS = {
+  tavern: [9.3, -69.0], tea: [14.2, -53.5], inn: [15.0, -41.5],
+  clinic: [-13.2, -68.5], cloth: [-9.8, -54.5], incense: [-12.5, -41.5],
+  general: [13.0, -7.0], snack: [13.0, 7.8], butcher: [-12.0, -6.0], rice: [-12.8, 9.0],
+};
+
 export function buildInterior(b) {
   colliders.length = 0;
   const g = new THREE.Group();
@@ -339,5 +347,10 @@ export function buildInterior(b) {
 
   g.userData.isInterior = true;
   for (const c of colliders) EXTRA_COLLIDERS.push(c); // 家具加入全局碰撞
-  return { group: g, colliders: colliders.slice() };
+  return {
+    group: g,
+    colliders: colliders.slice(),
+    keeperPos: KEEPER_POS[b.id] || [b.x, b.z - facing * hd + 1.4],
+    keeperHeading: facing * Math.PI / 2,   // 面向店门
+  };
 }

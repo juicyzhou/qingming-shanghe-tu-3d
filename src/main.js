@@ -47,11 +47,28 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g.camera.position.set(3.2, 2.6, -60);
       g.camera.lookAt(-11, 2.6, -68);
     } else if (view === 'interior') {
-      const int0 = g.world.interiors[0];
+      const idx = Math.min(parseInt(TEST_PARAMS.get('idx') || '0', 10) || 0, g.world.interiors.length - 1);
+      const int0 = g.world.interiors[idx];
       g._enterInterior(int0);
+      if (TEST_PARAMS.get('fp') === '1') {
+        g.player._freeCam = false;               // 真实第一人称
+        g.player.px = int0.spawnX; g.player.pz = int0.spawnZ;
+        g.player.yaw = (int0.def.x > 0 ? 1 : -1) * Math.PI / 2; // 面向店内
+        g.player.pitch = -0.05;
+      }
       g.player.px = int0.spawnX; g.player.pz = int0.spawnZ;
-      g.camera.position.set(int0.def.x - 0.5, 1.5, int0.def.z);
-      g.camera.lookAt(int0.def.x - int0.def.w / 2, 1.5, int0.def.z); // 看背墙
+      const ilook = TEST_PARAMS.get('look') || 'back';
+      const ix = int0.def.x, iz = int0.def.z;
+      if (ilook === 'up') {
+        g.camera.position.set(ix, 1.2, iz);
+        g.camera.lookAt(ix, 3.5, iz);              // 仰视天花板
+      } else if (ilook === 'corner') {
+        g.camera.position.set(ix - 2, 1.2, iz + 2);
+        g.camera.lookAt(ix + 4, 1.5, iz - 4);      // 看角落
+      } else {
+        g.camera.position.set(ix - 0.5, 1.5, iz);
+        g.camera.lookAt(ix - int0.def.w / 2, 1.5, iz); // 看背墙
+      }
     } else {
       g.camera.position.set(0, 82, 58);               // 鸟瞰全景
       g.camera.lookAt(0, 0, -12);
@@ -284,6 +301,19 @@ window.__qa = (g) => {
     const hideBtn = g.touch.btnE.style.display === 'none';
     out.push(`btnInteract show=${showBtn} hide=${hideBtn}`);
   }
+  // 11) 掌柜不与室内家具交叉
+  let keeperOk = true;
+  for (const int of g.world.interiors) {
+    const k = g.npcs.get('keeper_' + int.def.id);
+    if (!k) continue;
+    for (const f of int.furnitureColliders) {
+      if (Math.abs(k.position.x - f.x) < f.hw + 0.3 && Math.abs(k.position.z - f.z) < f.hd + 0.3) {
+        keeperOk = false;
+        out.push('keeperOverlap:' + int.def.id);
+      }
+    }
+  }
+  out.push(`keeperFree=${keeperOk}`);
   return out.join(' | ');
 };
 
@@ -332,15 +362,41 @@ window.__probe = (g) => {
   // 门/布幌（view=shop 时可见）
   parts.push(sample(-6.4, 1.2, -70, 'clinicDoor'));
   parts.push(sample(-5.8, 2.1, -73.3, 'clinicBanner2'));
-  // 反光检测：统计 >244 亮度像素占比
+  // 背墙卷轴/墙面定位（view=interior）
+  parts.push(sample(16.9, 1.6, -67.75, 'scrollN'));
+  parts.push(sample(16.9, 1.6, -72.25, 'scrollS'));
+  parts.push(sample(16.9, 1.6, -70, 'wallMid'));
+  parts.push(sample(16.9, 2.8, -70, 'wallTop'));
+  // 反光检测：统计 >244 亮度像素占比；灰色平面：低饱和、中亮度
   try {
     const idata = ctx.getImageData(0, 0, snap.width, snap.height).data;
-    let bright = 0, nn = 0;
-    for (let i = 0; i < idata.length; i += 16) {
-      nn++;
-      if (Math.max(idata[i], idata[i + 1], idata[i + 2]) > 244) bright++;
+    let bright = 0, nn = 0, gray = 0;
+    let gx0 = 1e9, gy0 = 1e9, gx1 = -1, gy1 = -1;
+    for (let y = 0; y < snap.height; y += 3) {
+      for (let x = 0; x < snap.width; x += 3) {
+        const i = (y * snap.width + x) * 4;
+        const r = idata[i], g = idata[i + 1], b = idata[i + 2];
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        if (mx > 244) bright++;
+        if (mx - mn < 30 && mx > 60 && mx < 220) {
+          gray++;
+          if (x < gx0) gx0 = x; if (x > gx1) gx1 = x;
+          if (y < gy0) gy0 = y; if (y > gy1) gy1 = y;
+        }
+        nn++;
+      }
     }
     parts.push(`glare=${(100 * bright / nn).toFixed(1)}%`);
+    parts.push(`gray=${(100 * gray / nn).toFixed(1)}% bbox=(${gx0},${gy0})-(${gx1},${gy1})`);
+    // 灰色区域原始采样
+    const rawP = (sx, sy, lbl) => {
+      const dd = ctx.getImageData(sx, sy, 1, 1).data;
+      return `${lbl}=(${dd[0]},${dd[1]},${dd[2]})`;
+    };
+    parts.push(rawP(375, 180, 'gr1'));
+    parts.push(rawP(380, 195, 'gr2'));
+    parts.push(rawP(390, 180, 'gr3'));
+    parts.push(rawP(380, 240, 'mid'));
   } catch { parts.push('glare=na'); }
   return parts.join(' | ');
 };

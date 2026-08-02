@@ -22,7 +22,8 @@ const SHOPKEEPER_DEFS = SHOPKEEPERS.map((sk) => {
   const b = BUILDINGS.find(x => x.id === sk.id);
   if (!b) return null;
   const facing = b.x > 0 ? -1 : 1;
-  return n('', sk.name, sk.role, b.x - facing * (b.w / 2 - 1.3), b.z, { heading: -facing * Math.PI / 2 });
+  // 位置由 Game 在室内建成后按 keeperPos 覆盖；此处先占位
+  return n('keeper_' + sk.id, sk.name, sk.role, b.x, b.z, { heading: facing * Math.PI / 2 });
 }).filter(Boolean);
 
 export const NPC_DEFS = [

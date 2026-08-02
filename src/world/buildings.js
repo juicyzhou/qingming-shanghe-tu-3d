@@ -291,7 +291,7 @@ export function buildBuildings(scene) {
   for (const b of BUILDINGS) {
     const exterior = buildShop(b);
     scene.add(exterior);
-    const { group, colliders } = buildInterior(b);
+    const { group, colliders, keeperPos, keeperHeading } = buildInterior(b);
     group.visible = false;
     scene.add(group);
     registerBuildingWalls(b);
@@ -303,6 +303,8 @@ export function buildBuildings(scene) {
       exterior,
       group,
       furnitureColliders: colliders,
+      keeperPos,
+      keeperHeading,
       doorX, doorZ,
       spawnX: doorX - facing * 1.4,
       spawnZ: doorZ,

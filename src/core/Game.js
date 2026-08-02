@@ -63,6 +63,15 @@ export class Game {
         this.npcs.set(def.id || `npc_${i}`, npc);
         this.npcList.push(npc);
       });
+      // 掌柜站到各店内室预留空位（避免与家具交叉）
+      for (const int of this.world.interiors) {
+        const k = this.npcs.get('keeper_' + int.def.id);
+        if (k) {
+          k.position.set(int.keeperPos[0], 0, int.keeperPos[1]);
+          k.homeX = int.keeperPos[0]; k.homeZ = int.keeperPos[1];
+          k.setHeading(int.keeperHeading);
+        }
+      }
     }
 
     // ---- 玩法 ----
