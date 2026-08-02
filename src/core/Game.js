@@ -72,6 +72,9 @@ export class Game {
           k.setHeading(int.keeperHeading);
         }
       }
+      if (qp.get('nolabel') === '1') { // 测试：隐藏姓名标签
+        for (const npc of this.npcList) if (npc.label) npc.label.visible = false;
+      }
     }
 
     // ---- 玩法 ----

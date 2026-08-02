@@ -28,7 +28,7 @@ export const BUILDINGS = [
   { id: 'tea',     name: '清风茶肆', sign: '清风茶肆', x: 11.5, z: -55, w: 10, d: 8,  banner: '茶', bannerColor: '#2f6d4f' },
   { id: 'inn',     name: '悦来客栈', sign: '悦来客栈', x: 11.5, z: -40, w: 12, d: 10, banner: '宿', bannerColor: '#b07c36' },
   // 北街西侧
-  { id: 'clinic',  name: '回春堂',   sign: '回春堂', x: -11.5, z: -70, w: 10, d: 8,  banner: '药', bannerColor: '#7a5aa0' },
+  { id: 'clinic',  name: '回春堂',   sign: '回春堂', x: -11.5, z: -70, w: 10, d: 8,  banner: '药', bannerColor: '#8a4a3a' },
   { id: 'cloth',   name: '锦绣布庄', sign: '锦绣布庄', x: -11.5, z: -55, w: 11, d: 9,  banner: '布', bannerColor: '#3c7a82' },
   { id: 'incense', name: '宝香斋',   sign: '宝香斋', x: -11.5, z: -40, w: 9,  d: 8,  banner: '香', bannerColor: '#a86e54' },
   // 中街东侧

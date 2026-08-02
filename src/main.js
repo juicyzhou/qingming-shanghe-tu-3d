@@ -28,6 +28,15 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g._running = false;
       return;
     }
+    if (TEST_PARAMS.get('repro') === '1') {
+      g.start();
+      const div = document.createElement('div');
+      div.id = 'probe-report';
+      div.textContent = window.__repro(g);
+      document.body.appendChild(div);
+      g._running = false;
+      return;
+    }
     // 先设自由相机，再启动 → 首帧即目标取景（截图/探针用）
     const view = TEST_PARAMS.get('view') || 'aerial';
     if (TEST_PARAMS.get('t')) g._t = parseFloat(TEST_PARAMS.get('t')); // 设定动画相位
@@ -211,6 +220,95 @@ window.__selftest = (g) => {
   out.push(`VIEW fwdAlign=${fwdAlign} cam=(${camFwd.x.toFixed(2)},${camFwd.z.toFixed(2)}) exp=(${expFwd.x.toFixed(2)},${expFwd.z.toFixed(2)})`);
   g.player.viewMode = 3;
   return out.join(' | ');
+};
+
+window.__repro = (g) => {
+  const out = [];
+  const int = g.world.interiors[0]; // 客栈（第一个室内）
+  // 模拟真实走入：从门外走进 → footprint 触发进入
+  const facing = int.def.x > 0 ? -1 : 1;
+  g.player.px = int.doorX - facing * 0.6;
+  g.player.pz = int.doorZ;
+  g.player.viewMode = 3;
+  g.update(0.016); // 走进门槛 → _updateInteriorTransition 进入
+  const entered = g.player.inside === int;
+  out.push('entered=' + entered);
+  g.player.viewMode = 1;
+  // 第一人称环视：多 yaw/pitch 逐帧扫描灰蓝平面
+  const scan = (raw) => {
+    const sn = document.createElement('canvas');
+    sn.width = g.renderer.domElement.width;
+    sn.height = g.renderer.domElement.height;
+    const c2 = sn.getContext('2d');
+    if (raw) { try { g.renderer.render(g.scene, g.camera); } catch {} }
+    else { try { g.composer.render(); } catch { g.renderer.render(g.scene, g.camera); } }
+    c2.drawImage(g.renderer.domElement, 0, 0);
+    const id = c2.getImageData(0, 0, sn.width, sn.height).data;
+    const pts = [];
+    for (let y = 0; y < sn.height; y += 3) {
+      for (let x = 0; x < sn.width; x += 3) {
+        const i = (y * sn.width + x) * 4;
+        const r = id[i], gg = id[i + 1], b = id[i + 2];
+        const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+        if (mx - mn < 45 && 45 < mx && mx < 220 && b >= gg && gg >= r) pts.push([x, y]);
+      }
+    }
+    return { pts, w: sn.width, h: sn.height };
+  };
+  // 原始 vs 后处理 对比（一次，yaw=0）
+  g.player.yaw = 0; g.player.pitch = 0;
+  g.player.update(0.016, g.input);
+  const rawCnt = scan(true).pts.length;
+  const compCnt = scan(false).pts.length;
+  out.push(`raw=${rawCnt} comp=${compCnt}`);
+  const found = [];
+  let maxGB = 0, maxImg = '';
+  for (const yaw of [0, 0.6, 1.2, 1.8, 2.4, 3.0, -0.6, -1.2, -1.8, -2.4, 3.2, -3.0]) {
+    for (const pitch of [-0.15, 0, 0.2]) {
+      g.player.yaw = yaw; g.player.pitch = pitch;
+      g.player.update(0.016, g.input);
+      const { pts, w: sw, h: sh } = scan(true); // 用原始渲染（无后处理）
+      if (pts.length > maxGB) {
+        maxGB = pts.length;
+        try {
+          const sm = document.createElement('canvas');
+          sm.width = 520; sm.height = 340;
+          const sc = sm.getContext('2d');
+          sc.drawImage(g.renderer.domElement, 0, 0, 520, 340);
+          maxImg = sm.toDataURL('image/jpeg', 0.85);
+        } catch { maxImg = ''; }
+      }
+      if (pts.length > 20) {
+        const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+        const x0 = Math.min(...xs), y0 = Math.min(...ys), x1 = Math.max(...xs), y1 = Math.max(...ys);
+        // 四角射线检测
+        const rayAt = (sx, sy) => {
+          try {
+            const ndcX = (sx / sw) * 2 - 1, ndcY = -(sy / sh) * 2 + 1;
+            const v3 = new THREE.Vector3(ndcX, ndcY, 0.5).unproject(g.camera);
+            const dir = v3.sub(g.camera.position).normalize();
+            g.scene.updateMatrixWorld(true);
+            const rc = new THREE.Raycaster(g.camera.position, dir);
+            rc.far = 40;
+            const hits = rc.intersectObject(int.group, true);
+            if (hits.length) {
+              const h = hits[0];
+              const mat = h.object.material;
+              const col = mat && mat.uniforms && mat.uniforms.uColor ? mat.uniforms.uColor.value.getHexString() : '?';
+              return 'hex' + col + '@(' + h.point.x.toFixed(0) + ',' + h.point.y.toFixed(1) + ',' + h.point.z.toFixed(0) + ')';
+            }
+            return 'NOHIT';
+          } catch { return 'err'; }
+        };
+        const hits = [rayAt(x0, y0), rayAt(x1, y0), rayAt(x0, y1), rayAt(x1, y1)].join(' ');
+        found.push(`y${yaw.toFixed(1)}[${x0},${y0}-${x1},${y1}]${hits}`);
+      }
+    }
+  }
+  out.push('gb=' + (found.length ? found.length : 'NONE'));
+  out.push('REGIONS=' + found.slice(0, 4).join(' ; '));
+  out.push('MAXIMG' + maxImg);
+  return out.join(' || ');
 };
 
 window.__qa = (g) => {

@@ -111,9 +111,9 @@ function buildShop(b) {
   const doorwayM = toon({ color: 0x241a0e });
   const doorLeafM = toon({ map: doorTexture(), side: THREE.DoubleSide });
   const signM = toon({ map: signTexture(b.sign) });
-  const bannerM = toon({ map: bannerTexture(b.banner, b.bannerColor), transparent: true });
+  const bannerM = toon({ map: bannerTexture(b.banner, b.bannerColor) }); // 不透明，避免透明通道闪烁
   const flagM = toon({ color: b.bannerColor });
-  const awningM = toon({ color: b.bannerColor, transparent: true, opacity: 0.95 });
+  const awningM = toon({ color: b.bannerColor }); // 不透明雨搭，避免闪烁
   const lanternM = toon({ color: 0xc84a2a });
 
   // ---- 墙身 ----

@@ -395,12 +395,12 @@ export function scrollTexture(variant = 0) {
     const g = c.getContext('2d');
     g.fillStyle = '#efe6cd';
     g.fillRect(0, 0, 72, 160);
-    // 远山
-    g.fillStyle = '#a8a48c';
+    // 远山（暖赭，避免灰蓝）
+    g.fillStyle = '#b09a78';
     g.beginPath();
     g.moveTo(0, 130); g.lineTo(18, 96); g.lineTo(34, 118); g.lineTo(52, 86); g.lineTo(72, 122); g.lineTo(72, 130); g.fill();
-    // 近山
-    g.fillStyle = '#6e7a58';
+    // 近山（暖绿）
+    g.fillStyle = '#8a7a52';
     g.beginPath();
     g.moveTo(0, 160); g.lineTo(20, 128); g.lineTo(40, 150); g.lineTo(60, 124); g.lineTo(72, 138); g.lineTo(72, 160); g.fill();
     // 日

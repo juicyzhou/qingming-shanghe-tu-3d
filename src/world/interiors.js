@@ -7,7 +7,7 @@ import { EXTRA_COLLIDERS } from './layout.js';
 // ============================================================
 
 // 室内材质统一加暖色环境光增益，避免背阴墙/顶被压成灰暗平面
-const BOOST = 0.5;
+const BOOST = 0.9;
 const wood = () => toon({ color: 0x9a7548, map: woodTexture(), boost: BOOST });
 const darkWood = () => toon({ color: 0x6e4f2c, boost: BOOST });
 const wallMat = () => toon({ color: 0xd5c7a2, map: wallTexture(), boost: BOOST });
@@ -227,21 +227,22 @@ export function buildInterior(b) {
   floor.position.set(cx, 0.02, cz);
   g.add(floor);
 
-  // 四面墙（门所在面留门洞）；全部双面渲染
+  // 四面墙（门所在面留门洞）；单面、正面朝室内，从内永远看到正确法线
   const mkWall = (w, h, x, y, z, rotY) => {
     const wall = new THREE.Mesh(flat(new THREE.PlaneGeometry(w, h)), wallMat());
     wall.position.set(x, y, z);
     wall.rotation.y = rotY;
-    wall.material.side = THREE.DoubleSide;
     return wall;
   };
   const gap = 0.85;                      // 门洞半宽（沿 z，与碰撞一致）
   const backX = cx - facing * hw;        // 门对面的墙
-  g.add(mkWall(b.d, WALL_H, backX, WALL_H / 2, cz, Math.PI / 2));        // 背墙（跨 z）
-  g.add(mkWall(b.w, WALL_H, cx, WALL_H / 2, cz - hd, 0));                 // 侧墙1（跨 x）
-  g.add(mkWall(b.w, WALL_H, cx, WALL_H / 2, cz + hd, 0));                 // 侧墙2
-  g.add(mkWall(hd - gap, WALL_H, doorX, WALL_H / 2, cz - (hd + gap) / 2, Math.PI / 2));  // 门左
-  g.add(mkWall(hd - gap, WALL_H, doorX, WALL_H / 2, cz + (hd + gap) / 2, Math.PI / 2));  // 门右
+  const backRotY = facing * Math.PI / 2;   // 背墙正面朝室内
+  const frontRotY = -facing * Math.PI / 2; // 门面墙正面朝室内
+  g.add(mkWall(b.d, WALL_H, backX, WALL_H / 2, cz, backRotY));                       // 背墙
+  g.add(mkWall(b.w, WALL_H, cx, WALL_H / 2, cz - hd, 0));                            // 侧墙1（朝内 +z）
+  g.add(mkWall(b.w, WALL_H, cx, WALL_H / 2, cz + hd, Math.PI));                      // 侧墙2（朝内 -z）
+  g.add(mkWall(hd - gap, WALL_H, doorX, WALL_H / 2, cz - (hd + gap) / 2, frontRotY)); // 门左
+  g.add(mkWall(hd - gap, WALL_H, doorX, WALL_H / 2, cz + (hd + gap) / 2, frontRotY)); // 门右
   // 门楣 + 门槛（跨 z）
   g.add(part(new THREE.BoxGeometry(0.18, 0.3, gap * 2), darkWood(), doorX, WALL_H - 0.15, cz));
   g.add(part(new THREE.BoxGeometry(0.2, 0.1, gap * 2), darkWood(), doorX, 0.05, cz));
@@ -334,8 +335,8 @@ export function buildInterior(b) {
       break;
   }
 
-  // 背墙挂轴 + 门槛地垫（通用陈设）
-  const scrollMat = toon({ map: scrollTexture(b.id.length % 3), side: THREE.DoubleSide, transparent: true, useAlpha: true });
+  // 背墙挂轴 + 门槛地垫（通用陈设）——不透明，避免透明通道闪烁
+  const scrollMat = toon({ map: scrollTexture(b.id.length % 3), side: THREE.DoubleSide });
   for (const sz of [-1, 1]) {
     const sc = new THREE.Mesh(flat(new THREE.PlaneGeometry(0.62, 1.5)), scrollMat);
     sc.position.set(backX + facing * 0.08, 1.6, cz + sz * (hd * 0.5));

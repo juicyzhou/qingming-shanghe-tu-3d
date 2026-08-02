@@ -120,7 +120,7 @@ export function buildBoat({ x, z, len = 9 }) {
   M.add(toon({ color: 0xb8915a }), new THREE.BoxGeometry(4.5, 1.0, 1.6), 0, 1.7, 0);               // 货舱
   M.add(toon({ color: 0x8a4a2a }), new THREE.BoxGeometry(4.9, 0.15, 1.9), 0, 2.25, 0, 0.05);      // 舱盖
   M.add(darkWood(), new THREE.CylinderGeometry(0.06, 0.08, 4.4, 5), 0.8, 2.4, 0);                 // 桅
-  M.add(toon({ color: 0xe0d0a0, transparent: true, opacity: 0.9 }), new THREE.PlaneGeometry(2.2, 2.6), 0.8, 2.9, 0.8, 0, 0.2); // 帆
+  M.add(toon({ color: 0xe0d0a0 }), new THREE.PlaneGeometry(2.2, 2.6), 0.8, 2.9, 0.8, 0, 0.2); // 帆（不透明，避免闪烁）
   for (const mesh of M.meshes()) g.add(mesh);
   g.position.set(x, RIVER.y + 0.05, z);
   g.userData.boat = true;
