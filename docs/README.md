@@ -37,6 +37,15 @@ npm run preview   # 本地预览构建产物
 | `?weather=rain/snow/clear` | 强制指定天气（否则 40~90s 随机换天） |
 | `?analytics=1` | 打开体验数据面板（首任务完成率/停留时长，可导出/清空） |
 
+## E2E 实测（`tests/e2e/`）
+
+模拟电脑/手机的真实游戏流程（对话点击/键盘/触屏），无需真实设备：
+
+```bash
+node tests/e2e/desktop.mjs   # 电脑端 33 项（对话全流程/进店/小玩法/昼夜/暂停）
+node tests/e2e/mobile.mjs    # 手机端 14 项（摇杆/视角/按钮/竖屏 FOV）
+```
+
 ## 宣传素材（`promo/`）
 
 - 小红书竖版海报 `poster-vertical.png`（1080×1440）· 公众号横版海报 `poster-horizontal.png`（1920×1080）

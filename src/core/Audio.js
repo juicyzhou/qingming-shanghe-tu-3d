@@ -45,9 +45,14 @@ export class AudioSys {
     addEventListener('keydown', resume, { once: true });
   }
 
+  // 音频可用性检查：无音频设备的环境 currentTime 可能为 NaN，统一防御
+  _ok() {
+    return !!(this.ctx && this.enabled && isFinite(this.ctx.currentTime));
+  }
+
   // ---- 拨弦音色（筝/琵琶式：快速衰减包络 + 泛音） ----
   pluck(freq, time, dur = 0.9, vol = 0.5, dest = null, type = 'triangle') {
-    if (!this.ctx) return;
+    if (!this._ok()) return;
     const t = time || this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -132,7 +137,7 @@ export class AudioSys {
   // ---- 音效 ----
   // 脚步随地面变化（P1-2）：wood 木板 / soft 草地 / stone 石板
   step(type) {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const g = this.ctx.createGain();
@@ -191,7 +196,7 @@ export class AudioSys {
   }
 
   _chirp() {
-    if (!this.ctx) return;
+    if (!this._ok()) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     osc.type = 'sine';
@@ -207,7 +212,7 @@ export class AudioSys {
   }
 
   _noiseBurst(dur = 0.1, vol = 0.05) {
-    if (!this.ctx) return null;
+    if (!this._ok()) return null;
     const t = this.ctx.currentTime;
     const buf = this.ctx.createBuffer(1, Math.ceil(this.ctx.sampleRate * dur), this.ctx.sampleRate);
     const d = buf.getChannelData(0);
@@ -219,7 +224,7 @@ export class AudioSys {
 
   // 开门吱呀（进/出店）
   creak() {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     osc.type = 'sawtooth';
@@ -237,7 +242,7 @@ export class AudioSys {
 
   // 翻页（对话打开/换页）
   flip() {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     const { src, t } = this._noiseBurst(0.13, 0.08);
     if (!src) return;
     const bp = this.ctx.createBiquadFilter();
@@ -252,7 +257,7 @@ export class AudioSys {
 
   // 盖章（任务完成落款）
   stamp() {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     osc.type = 'sine';
@@ -302,39 +307,39 @@ export class AudioSys {
 
   // 成交（购买成功）
   deal() {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     const t = this.ctx.currentTime;
     this.pluck(880, t, 0.15, 0.16, this.sfxGain, 'sine');
     this.pluck(1174, t + 0.05, 0.22, 0.13, this.sfxGain, 'sine');
   }
 
   blip() {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     this.pluck(740, null, 0.12, 0.12, this.sfxGain, 'sine');
   }
 
   coin() {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     const t = this.ctx.currentTime;
     this.pluck(988, t, 0.2, 0.2, this.sfxGain, 'sine');
     this.pluck(1319, t + 0.07, 0.3, 0.2, this.sfxGain, 'sine');
   }
 
   chime() {
-    if (!this.ctx || !this.enabled) return;
-    // 五声上行琶音
-    [0, 1, 2, 4, 5].forEach((i, k) => {
+    if (!this._ok()) return;
+    // 五声上行琶音（宫商角徵羽，索引 0~4；此前 [0,1,2,4,5] 越界取到 undefined → NaN 崩溃）
+    [0, 1, 2, 3, 4].forEach((i, k) => {
       this.pluck(AudioSys.PENTA2[i], this.ctx.currentTime + k * 0.09, 0.6, 0.16, this.sfxGain);
     });
   }
 
   click() {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     this.pluck(520, null, 0.06, 0.1, this.sfxGain, 'square');
   }
 
   swing() {
-    if (!this.ctx || !this.enabled) return;
+    if (!this._ok()) return;
     this.pluck(180, null, 0.18, 0.25, this.sfxGain, 'sawtooth');
   }
 }

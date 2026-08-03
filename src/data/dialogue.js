@@ -74,7 +74,7 @@ export function buildScript(npc, game) {
         pages.push({
           title: npc.name,
           text: `“${line}”`,
-          options: [{ label: '交付', action: () => { q.talkTo(npc.npcId); game.hud.update(); } }],
+          options: [{ label: '交付', action: () => { q.talkTo(npc.npcId); game.hud.update(game); } }],
         });
       }
     } else if (obj.type === 'minigame' && obj.npc === npc.npcId) {
@@ -84,7 +84,7 @@ export function buildScript(npc, game) {
         options: [{
           label: '好，我来帮你（节奏撑船）',
           action: () => game.hud.startMinigame(
-            () => { q.minigameComplete(qid); game.hud.update(); },
+            () => { q.minigameComplete(qid); game.hud.update(game); },
             () => {},
             game.touch
           ),
@@ -97,7 +97,7 @@ export function buildScript(npc, game) {
         text: `“${obj.question}”`,
         options: obj.choices.map((c, idx) => ({
           label: c,
-          action: () => { q.riddleAnswer(qid, idx); game.hud.update(); },
+          action: () => { q.riddleAnswer(qid, idx); game.hud.update(game); },
         })),
       });
     } else if (obj.type === 'buy' && obj.npc === npc.npcId) {
@@ -108,7 +108,7 @@ export function buildScript(npc, game) {
           title: npc.name,
           text: '“新采的春茶，30 文一包，客官来一包？”',
           options: [
-            { label: `买一包（${obj.cost} 文）`, action: () => { q.buy('tea', obj.cost); game.hud.update(); } },
+            { label: `买一包（${obj.cost} 文）`, action: () => { q.buy('tea', obj.cost); game.hud.update(game); } },
             { label: '太贵了' },
           ],
         });
@@ -128,7 +128,7 @@ export function buildScript(npc, game) {
       pages.push({
         title: npc.name,
         text: '“糖人？倒是有阵子没见了，我去看看热闹。”',
-        options: [{ label: '好，随我来', action: () => { q.attract(npc.npcId); game.hud.update(); } }],
+        options: [{ label: '好，随我来', action: () => { q.attract(npc.npcId); game.hud.update(game); } }],
       });
     }
   }

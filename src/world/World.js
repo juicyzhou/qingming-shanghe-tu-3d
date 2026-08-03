@@ -132,9 +132,9 @@ function buildInteractables(scene) {
   const flag = new THREE.Mesh(flat(new THREE.BoxGeometry(0.02, 0.5, 0.3)), toon({ color: '#d8402a' }));
   flag.position.set(0, 0.9, 0.75);
   raceG.add(flag);
-  raceG.position.set(15.6, 0.1, 18.2);
+  raceG.position.set(16, 0.1, 17); // 避开门前 NPC（毛脚夫/船老大），保证竞速可被交互
   group.add(raceG);
-  items.push({ id: 'raceboat', label: '竞速', x: 15.6, z: 18.2, group: raceG });
+  items.push({ id: 'raceboat', label: '竞速', x: 16, z: 17, group: raceG });
 
   scene.add(group);
   return items;

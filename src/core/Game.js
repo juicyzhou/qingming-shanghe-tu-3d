@@ -279,7 +279,9 @@ export class Game {
   update(dt) {
     this.analytics.beat(); // P3-4 停留时长心跳
     if (this._paused || this._introActive) {
-      // 暂停/引导：世界与 NPC 保持轻动画，不响应玩家输入与交互
+      // 暂停/引导：世界与 NPC 保持轻动画，不响应玩家输入与交互；
+      // 但暂停时仍响应 Esc（否则暂停后无法用键盘退出）
+      if (this._paused && this.input.wasPressed('Escape')) this.togglePause();
       for (const npc of this.npcList) npc.update(dt, this.player);
       this.world.update(dt, this._t);
       this.weather.update(dt, this.hour, this._t);

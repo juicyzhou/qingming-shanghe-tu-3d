@@ -153,6 +153,11 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g.camera.lookAt(0, 0, -12);
     }
     g.camera.fov = 60; g.camera.updateProjectionMatrix();
+    // E2E 实测：?play=1 以正常玩家控制持续运行（不被 40 帧测试截停）
+    if (TEST_PARAMS.get('play') === '1') {
+      g.start();
+      return;
+    }
     // P3-2 宣传视频：?cinematic=1 保持循环运行（不被 40 帧测试截停），相机由外部脚本驱动
     if (TEST_PARAMS.get('cinematic') === '1') {
       g.player._freeCam = true;
