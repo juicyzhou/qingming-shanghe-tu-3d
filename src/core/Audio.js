@@ -170,14 +170,6 @@ export class AudioSys {
       o.connect(g); o.start(t0); return g;
     };
 
-    // 汴河水声：粉噪 → 双段低通(420→760，陡降无残留嘶声) → 缓慢起伏
-    {
-      const s = src(pink), f1 = lp(420), f2 = lp(760), g = this.ctx.createGain();
-      g.gain.value = 0.16;
-      slowLfo(0.05, 0.05).connect(g.gain); // 水波拍岸的起伏
-      s.connect(f1); f1.connect(f2); f2.connect(g); g.connect(this.ambientGain);
-      s.start(t0);
-    }
     // 市井人声：粉噪 → 低通(900) → 带通(1200,Q2) → 极轻 —— 远处人声嗡嗡，无 1.7k 嘶声
     {
       const s = src(pink), f1 = lp(900), f2 = bp(1200, 2), g = this.ctx.createGain();
@@ -186,6 +178,7 @@ export class AudioSys {
       s.connect(f1); f1.connect(f2); f2.connect(g); g.connect(this.ambientGain);
       s.start(t0);
     }
+    // 汴河水声层：按用户要求移除（保留市井人声与鸟鸣）
     // 鸟鸣：随机间隔的清脆短音（正弦，保持悦耳）
     const chirp = () => {
       if (!this.ctx || !this._ambientOn) return;
