@@ -12,6 +12,7 @@
 | [03-ASSETS.md](03-ASSETS.md) | **资产总结**：程序化贴图/几何/人物/音频清单与规模 |
 | [04-CHANGELOG.md](04-CHANGELOG.md) | **迭代记录**：21 个提交分阶段说明 + 经验教训 |
 | [05-ROADMAP.md](05-ROADMAP.md) | **优化计划**：P0~P3 优先级路线 + 发布验收清单 |
+| [06-微信真机实测清单.md](06-%E5%BE%AE%E4%BF%A1%E7%9C%9F%E6%9C%BA%E5%AE%9E%E6%B5%8B%E6%B8%85%E5%8D%95.md) | **微信内置浏览器真机验收清单**（iOS/Android 12 项逐条勾选） |
 
 ## 🚀 快速命令
 
@@ -31,5 +32,11 @@ npm run preview   # 本地预览构建产物
 | `?features=1` | 第一批优化自测（指引箭头/引导/暂停/成就卡） |
 | `?qa=1` | 综合 QA |
 | `?day=1` | 关闭傍晚暖光（恢复正午光照，用于对比） |
+| `?cinematic=1` | 保持自由相机持续运行（宣传视频帧捕获用） |
+
+## 宣传素材（`promo/`）
+
+- 小红书竖版海报 `poster-vertical.png`（1080×1440）· 公众号横版海报 `poster-horizontal.png`（1920×1080）
+- 知乎技术文 `tech-article.md` · 短视频帧序列脚本 `capture-cinematic.mjs`（详见 `promo/README.md`）
 | `?debug=1` | 显示"射线"按钮，检测屏幕中心命中物体 |
 | `?touch=1` | 强制触屏模式 ｜ `?simple=1` 关描边 ｜ `?nocomposer=1` 绕过后处理 |

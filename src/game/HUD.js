@@ -152,6 +152,7 @@ export class HUD {
         <div class="panel pmenu-panel">
           <h2>暂 停</h2>
           <div class="vol-row">音量 <input type="range" id="vol" min="0" max="1" step="0.05"></div>
+          <button class="btn ghost" id="pm-outline" style="display:none">墨线描边：开</button>
           <button class="btn" id="pm-continue">继续漫游</button>
           <button class="btn ghost" id="pm-restart">重新开始</button>
           <button class="btn ghost" id="pm-title">返回标题</button>
@@ -284,6 +285,14 @@ export class HUD {
     el.querySelector('#pm-continue').onclick = () => game.togglePause();
     el.querySelector('#pm-restart').onclick = () => location.reload();
     el.querySelector('#pm-title').onclick = () => location.reload();
+    // P1-5 墨线描边开关（仅桌面/有描边 pass 时显示）
+    const ob = el.querySelector('#pm-outline');
+    if (game.composer && game.composer.outlinePass) {
+      const sync = () => { ob.textContent = `墨线描边：${game.outlineOn() ? '开' : '关'}`; };
+      sync();
+      ob.style.display = 'block';
+      ob.onclick = () => { game.setOutline(!game.outlineOn()); sync(); };
+    }
   }
 
   closePause() {

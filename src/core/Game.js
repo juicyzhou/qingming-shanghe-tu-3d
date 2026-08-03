@@ -44,10 +44,15 @@ export class Game {
     const qp = new URLSearchParams(location.search);
     this.composer = qp.get('nocomposer') === '1' ? null :
       createComposer(renderer, this.scene, this.camera, { outline: qp.get('simple') !== '1' && !touch });
+    // P1-5 桌面描边可选：读取用户上次选择（默认开）
+    if (this.composer?.outlinePass && localStorage.getItem('qmsht_outline') === '0') {
+      this.composer.outlinePass.enabled = false;
+    }
 
     // ---- 系统 ----
     this.input = new Input(this.canvas);
     this.audio = new AudioSys();
+    this.audio.enableOnGesture(); // P3-3 任意手势兜底解锁音频（微信 WKWebView 常见）
     this.hud = new HUD();
     this.hud._audio = this.audio; // 供 HUD 播放翻页/小玩法音效
     this.touch = new TouchControls(this.input); // 触屏虚拟摇杆/按钮（非触屏为 no-op）
@@ -146,6 +151,18 @@ export class Game {
     this.input.requestLock();
     localStorage.setItem('qmsht_intro', '1');
     this.hud.update(this);
+  }
+
+  // P1-5 墨线描边开关（桌面，触屏恒关）
+  outlineOn() {
+    return !!(this.composer && this.composer.outlinePass && this.composer.outlinePass.enabled);
+  }
+
+  setOutline(on) {
+    const op = this.composer && this.composer.outlinePass;
+    if (!op) return;
+    op.enabled = !!on;
+    try { localStorage.setItem('qmsht_outline', on ? '1' : '0'); } catch {}
   }
 
   // 暂停/继续（P0-3）

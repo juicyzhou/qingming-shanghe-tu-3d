@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { Game } from './core/Game.js';
 import { collides } from './world/layout.js';
 
+// P3-3 微信内置浏览器检测（诊断/兼容分支用）
+window.__inWeChat = /MicroMessenger/i.test(navigator.userAgent);
+if (window.__inWeChat) console.log('[qmsht] 微信内置浏览器模式');
+
 window.__loadProgress?.(25, '正在装裱画卷…');
 
 // P0-4 WebGL 兼容检测：不支持时显示友好提示页（替代白屏）
@@ -140,6 +144,12 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g.camera.lookAt(0, 0, -12);
     }
     g.camera.fov = 60; g.camera.updateProjectionMatrix();
+    // P3-2 宣传视频：?cinematic=1 保持循环运行（不被 40 帧测试截停），相机由外部脚本驱动
+    if (TEST_PARAMS.get('cinematic') === '1') {
+      g.player._freeCam = true;
+      g.start();
+      return;
+    }
     const orig = g._loop.bind(g);
     let frames = 0;
     g._loop = () => {

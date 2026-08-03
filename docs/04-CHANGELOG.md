@@ -92,6 +92,12 @@
 |---|---|
 | `48a8ea0` | **P0-4 WebGL 兼容**：启动前 `webglAvailable()` 检测 + `try/catch` 兜底 → 羊皮纸友好提示页（更新浏览器/硬件加速/换设备/重试），无 WebGL 不白屏。**P0-5 加载进度**：index.html 内联水墨风加载动画（`__loadProgress` 推进：铺卷→装裱→唤起汴京→完成淡出）。**P1-2 沉浸氛围**：环境音三层（汴河低噪+市井人声+随机鸟鸣，`startAmbient` 合成）；脚步随地面变化（`layout.groundType`：石板/木桥/草地，接入 Player.onStep，此前进脚步从未触发）；傍晚暖光（`LIGHT_UNIFORMS` 太阳略低更暖 + 雾更沉，`?day=1` 恢复正午 A/B 验证：墙体更暖、glare/gray 均为 0）。**P1-3 移动端**：竖屏 FOV 62→78；触屏按钮 safe-area 防刘海/手势条遮挡；自适应像素比（帧耗时 >36ms 降档、<20ms 升回，上限触屏 2/桌面 1.5，headless 实测正确降档）。**P1-4 音效细化**：开门吱呀/对话翻页/结算盖章/购买成交，接进店、对话、结算、购买全链路；AudioSys 增加 `isFinite(currentTime)` 防御（无音频设备环境不崩溃） |
 
+## 阶段十四：第三批优化（P1 收尾 + 发布传播）
+
+| 提交 | 内容 |
+|---|---|
+| `(待补)` | **P1-5 桌面描边可选**：composer 暴露 `outlinePass`，暂停菜单加「墨线描边」开关（运行时 enabled 切换 + localStorage 记忆，触屏恒关）。**P3-1 分享元信息**：index.html 增加 og/twitter meta（title/description/type/url/image）+ 内联 SVG 汴字 favicon；生成 `public/og-cover.jpg`（1200×630，headless 截取空中全景，随构建发布，微信/QQ 分享显示缩略图）。**P3-2 宣传素材**：小红书竖版海报（1080×1440）/ 公众号横版海报（1920×1080，HTML 模板叠字后截图）/ 知乎技术文（promo/tech-article.md，约 1800 字，含着色器代码与坑）；短视频因环境无 ffmpeg 交付 `capture-cinematic.mjs` 帧序列脚本 + 编码命令。**P3-3 微信兼容**：`window.__inWeChat` UA 检测 + `enableOnGesture` 音频手势兜底（WKWebView 常见）；真机 12 项验收清单 docs/06。另加 `?cinematic=1` 自由相机持续运行（宣传帧捕获用） |
+
 ## 经验教训（后续开发必读）
 
 1. **真实 GPU 与 swiftshader 渲染有差异**：部分伪影仅真机出现，务必用"用户截图分析 + 真机调试工具（射线检测）"定位，勿只依赖本地无头测试。

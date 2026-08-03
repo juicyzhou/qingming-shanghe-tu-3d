@@ -23,6 +23,7 @@ export function createComposer(renderer, scene, camera, { outline: useOutline = 
     outline.visibleEdgeColor = new THREE.Color('#35281c');
     outline.hiddenEdgeColor = new THREE.Color('#35281c');
     composer.addPass(outline);
+    composer.outlinePass = outline; // P1-5 暴露给 Game 做运行时开关
   }
 
   // ---- 暖色校色 + 暗角 + 轻微纸感 ----
