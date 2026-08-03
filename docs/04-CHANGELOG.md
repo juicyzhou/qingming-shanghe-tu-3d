@@ -120,7 +120,7 @@
 
 | 提交 | 内容 |
 |---|---|
-| `(待补)` | **埋点**：`game/Analytics.js` 本地统计（localStorage，零外部请求，保持"离线可玩"）——会话数 / 累计与平均停留（每帧心跳 + beforeunload 落盘）/ 首任务接受与完成（每会话各计一次）/ 任务完成 / 进店 / 小玩法获胜 / 灯谜 / 图鉴集齐。**面板**：`?analytics=1` 打开羊皮纸数据面板（11 行指标 + 导出 JSON + 清空），`window.__analytics()` 供控制台/巡检。修复一处真实回归：`TEST_PARAMS` 原声明在 Game 构建之后 → TDZ ReferenceError 会在每次正常加载时误触发 WebGL 兼容页，已上移到文件顶部。selftest 扩至 13 任务+打卡+昼夜+三玩法+天气+埋点全过，features/qa 全过 |
+| `39c2ea0` | **埋点**：`game/Analytics.js` 本地统计（localStorage，零外部请求，保持"离线可玩"）——会话数 / 累计与平均停留（每帧心跳 + beforeunload 落盘）/ 首任务接受与完成（每会话各计一次）/ 任务完成 / 进店 / 小玩法获胜 / 灯谜 / 图鉴集齐。**面板**：`?analytics=1` 打开羊皮纸数据面板（11 行指标 + 导出 JSON + 清空），`window.__analytics()` 供控制台/巡检。修复一处真实回归：`TEST_PARAMS` 原声明在 Game 构建之后 → TDZ ReferenceError 会在每次正常加载时误触发 WebGL 兼容页，已上移到文件顶部。selftest 扩至 13 任务+打卡+昼夜+三玩法+天气+埋点全过，features/qa 全过 |
 
 ## 经验教训（后续开发必读）
 
