@@ -40,7 +40,7 @@
 | P3-1 | 分享元信息 | ✅ 已完成：og/twitter meta（title/description/type/url/image）+ 内联 SVG favicon + 公开 `og-cover.jpg`（1200×630，随构建发布） |
 | P3-2 | 宣传素材 | ✅ 已完成：知乎技术文（promo/tech-article.md）+ 小红书竖版海报（1080×1440）+ 公众号横版海报（1920×1080）+ 短视频帧序列脚本（capture-cinematic.mjs，环境无 ffmpeg 故交付帧序列+编码命令） |
 | P3-3 | 微信内置浏览器实测 | 🔶 代码已备（`window.__inWeChat` UA 检测 + 音频手势兜底 + 触屏自动模式）；真机实测清单 docs/06 待用户按表执行 |
-| P3-4 | 体验优化漏斗 | 待做：首任务完成率 / 停留时长埋点（轻量，不侵入） |
+| P3-4 | 体验优化漏斗 | ✅ 已完成：本地轻量埋点（零外部请求）——会话数 / 停留时长 / 首任务接受与完成率 / 任务/小玩法计数；`?analytics=1` 面板 + 导出 JSON + 清空；`window.__analytics()` 读取 |
 
 ## 建议执行顺序
 

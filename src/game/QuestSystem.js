@@ -38,6 +38,7 @@ export class QuestSystem {
     if (id === 'bridge_gifts') this.game.inventory.add('mantou', 2);
     if (id === 'gate_message') this.game.inventory.add('document', 1);
     this.markDirty = true;
+    this.game.analytics?.markFirstAccept(); // P3-4 首任务接受
     this.game.audio?.blip();
     this.game.hud.toast(`接到任务：${q.title}`);
   }
@@ -61,6 +62,8 @@ export class QuestSystem {
     this.stats.completed++;
     this.stats.reputation += 10;
     this.markDirty = true;
+    this.game.analytics?.inc('questsDone'); // P3-4
+    this.game.analytics?.markFirstComplete(); // P3-4 首任务完成
     this.game.audio?.chime(); // 完成琶音
     this.game.hud.settle(q, this.game);
     this.game.hud.update(this.game);

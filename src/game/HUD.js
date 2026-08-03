@@ -129,6 +129,14 @@ const CSS = `
   #hud .race .t-push{position:fixed;left:50%;bottom:22%;transform:translateX(-50%);width:170px;height:60px;
     border-radius:16px;border:2px solid #f3e8cd;background:rgba(140,58,32,.8);color:#f3e8cd;
     font-family:inherit;font-size:20px;letter-spacing:4px;pointer-events:auto;z-index:63;}
+  /* P3-4 体验数据面板 */
+  #hud .analytics{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:61;background:rgba(60,45,20,.42);pointer-events:auto;}
+  #hud .analytics h2{margin:0 0 12px;color:#5a2c10;font-size:22px;letter-spacing:4px;}
+  #hud .analytics table{width:100%;font-size:15px;line-height:2;color:#4a3420;border-collapse:collapse;}
+  #hud .analytics td{padding:2px 0;border-bottom:1px dashed #c8b088;}
+  #hud .analytics td:last-child{text-align:right;color:#8a3a20;font-weight:bold;}
+  #hud .analytics .row{display:flex;gap:10px;justify-content:center;margin-top:14px;}
   #hud .questlog h3{margin:0 0 6px;color:#6e4a20;}
   #hud .questlog .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #c8b088;padding:3px 0;}
   #hud .questlog .row.done{color:#5a6e3a;text-decoration:line-through;}
@@ -205,6 +213,7 @@ export class HUD {
         </div>
       </div>
       <div class="achieve" id="achieve" style="display:none"></div>
+      <div class="analytics" id="analytics" style="display:none"></div>
       <div class="title" id="title">
         <h1>汴京漫游</h1>
         <div class="sub">· 清明上河图 · 3D 沉浸画卷 ·</div>
@@ -240,6 +249,7 @@ export class HUD {
       intro: h.querySelector('#intro'),
       pausemenu: h.querySelector('#pausemenu'),
       achieve: h.querySelector('#achieve'),
+      analytics: h.querySelector('#analytics'),
       title: h.querySelector('#title'),
     };
     this.dialogueOpen = false;
@@ -348,6 +358,43 @@ export class HUD {
 
   closePause() {
     this.cache.pausemenu.style.display = 'none';
+  }
+
+  // ---- P3-4 体验数据面板（本地埋点，?analytics=1 打开） ----
+  showAnalytics(game) {
+    const el = this.cache.analytics;
+    const m = game.analytics.metrics();
+    el.innerHTML = `
+      <div class="panel">
+        <h2>体验数据 · 本地</h2>
+        <table>
+          <tr><td>总会话</td><td>${m.sessions}</td></tr>
+          <tr><td>平均停留</td><td>${fmtDuration(m.avgMs)}</td></tr>
+          <tr><td>累计停留</td><td>${fmtDuration(m.totalMs)}</td></tr>
+          <tr><td>接首任务的会话</td><td>${m.accepted1}（${m.acceptRate}）</td></tr>
+          <tr><td>完成首任务的会话</td><td>${m.completed1}</td></tr>
+          <tr><td>首任务完成率</td><td>${m.firstQuestRate}</td></tr>
+          <tr><td>累计完成任务</td><td>${m.questsDone}</td></tr>
+          <tr><td>进店次数</td><td>${m.interiors}</td></tr>
+          <tr><td>小玩法获胜</td><td>${m.minigameWins}</td></tr>
+          <tr><td>灯谜破解</td><td>${m.riddlesSolved}</td></tr>
+          <tr><td>画卷图鉴集齐</td><td>${m.allLandmarks} 次</td></tr>
+        </table>
+        <div class="row">
+          <button class="btn" id="an-exp">导出 JSON</button>
+          <button class="btn ghost" id="an-reset">清空</button>
+          <button class="btn ghost" id="an-close">关闭</button>
+        </div>
+      </div>`;
+    el.style.display = 'flex';
+    el.querySelector('#an-close').onclick = () => { el.style.display = 'none'; };
+    el.querySelector('#an-reset').onclick = () => { game.analytics.reset(); this.showAnalytics(game); };
+    el.querySelector('#an-exp').onclick = () => {
+      const a = document.createElement('a');
+      a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(game.analytics.metrics(), null, 2));
+      a.download = '汴京漫游体验数据.json';
+      a.click();
+    };
   }
 
   // ---- P1-1 成就分享卡：Canvas 生成卡片图，可保存/长按分享 ----
@@ -861,6 +908,12 @@ const QUEST_TITLES = {
   inn_wood: '客栈添柴', tavern_wine: '醉仙楼送酒', rice_deliver: '米铺送粮',
   riddle: '卦摊猜谜', storyteller_script: '说书人新书',
 };
+
+// P3-4 毫秒 → 「X分Y秒」
+function fmtDuration(ms) {
+  const sec = Math.max(0, Math.round((ms || 0) / 1000));
+  return `${Math.floor(sec / 60)}分${sec % 60}秒`;
+}
 
 // P2-2 时辰 → 「子丑寅卯…」+ 昼夜标注
 function shichenLabel(hour) {

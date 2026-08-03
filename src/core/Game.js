@@ -14,6 +14,7 @@ import { WATER_UNIFORMS } from '../render/shaders.js';
 import { Weather } from '../render/weather.js';
 import { Inventory } from '../game/Inventory.js';
 import { QuestSystem } from '../game/QuestSystem.js';
+import { Analytics } from '../game/Analytics.js';
 import { HUD } from '../game/HUD.js';
 import { buildScript } from '../data/dialogue.js';
 import { isTouchDevice } from './touch.js';
@@ -112,6 +113,11 @@ export class Game {
     // ---- 玩法 ----
     this.inventory = new Inventory();
     this.quests = new QuestSystem(this);
+    // P3-4 体验埋点（本地，零外部请求）
+    this.analytics = new Analytics();
+    const fin = () => this.analytics.end();
+    addEventListener('beforeunload', fin);
+    addEventListener('pagehide', fin);
 
     this._t = 0;
     this._clock = new THREE.Clock();
@@ -158,6 +164,7 @@ export class Game {
       this.audio.ensure();
       this.audio.startAmbient(); // P1-2 环境音：水流/市井/鸟鸣
     }
+    this.analytics.begin(); // P3-4 会话开始
     this.hud.update(this);
     this._running = true;
     this._clock.start();
@@ -270,6 +277,7 @@ export class Game {
   }
 
   update(dt) {
+    this.analytics.beat(); // P3-4 停留时长心跳
     if (this._paused || this._introActive) {
       // 暂停/引导：世界与 NPC 保持轻动画，不响应玩家输入与交互
       for (const npc of this.npcList) npc.update(dt, this.player);
@@ -372,6 +380,7 @@ export class Game {
         this.hud.update(this);
         if (this.landmarksCollected.size === LANDMARKS.length) {
           this.hud.toast('汴京十二景集齐，画卷完整展开！');
+          this.analytics.inc('allLandmarks'); // P3-4
           setTimeout(() => this.hud.showAchievement(this, 'landmarks'), 900);
         }
       }
@@ -469,6 +478,7 @@ export class Game {
     if (!r) return false;
     if (this.lanternRiddles.has(idx)) return false;
     this.lanternRiddles.add(idx);
+    this.analytics.inc('riddlesSolved'); // P3-4
     this.inventory.earn(25);
     this.quests.stats.reputation += 5;
     this.audio?.coin();
@@ -485,6 +495,7 @@ export class Game {
     if (win) {
       this.inventory.earn(40);
       this.quests.stats.reputation += 5;
+      this.analytics.inc('minigameWins'); // P3-4
       this.audio?.coin();
       this.hud.toast('赢了竞速！+40 文');
     } else {
@@ -554,6 +565,7 @@ export class Game {
     }
     this.audio?.creak(); // P1-4 开门吱呀
     this.hud.toast(`走进${int.def.name}`);
+    this.analytics.inc('interiors'); // P3-4
   }
 
   _exitInterior() {

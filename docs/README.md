@@ -35,6 +35,7 @@ npm run preview   # 本地预览构建产物
 | `?cinematic=1` | 保持自由相机持续运行（宣传视频帧捕获用） |
 | `?hour=14` | 设定起始时辰 ｜ `?daylen=480` 一日秒数 ｜ `?nocycle=1` 关闭昼夜循环 |
 | `?weather=rain/snow/clear` | 强制指定天气（否则 40~90s 随机换天） |
+| `?analytics=1` | 打开体验数据面板（首任务完成率/停留时长，可导出/清空） |
 
 ## 宣传素材（`promo/`）
 

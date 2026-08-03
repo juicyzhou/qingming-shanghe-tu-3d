@@ -8,7 +8,13 @@ import { WATER_UNIFORMS } from './render/shaders.js';
 window.__inWeChat = /MicroMessenger/i.test(navigator.userAgent);
 if (window.__inWeChat) console.log('[qmsht] 微信内置浏览器模式');
 
+// P3-4 埋点：控制台直接读取指标（供测试/巡检）
+window.__analytics = () => (window.game ? window.game.analytics.metrics() : null);
+
 window.__loadProgress?.(25, '正在装裱画卷…');
+
+// URL 调试参数（须在 Game 构建前就绪，供 ?analytics=1 等提前分支使用）
+const TEST_PARAMS = new URLSearchParams(location.search);
 
 // P0-4 WebGL 兼容检测：不支持时显示友好提示页（替代白屏）
 function webglAvailable() {
@@ -30,6 +36,8 @@ if (!webglAvailable()) {
   try {
     window.__loadProgress?.(50, '正在唤起汴京…');
     window.game = new Game(app);
+    // P3-4 体验数据面板（?analytics=1 打开）
+    if (TEST_PARAMS.get('analytics') === '1') window.game.hud.showAnalytics(window.game);
     window.__loadProgress?.(100, '长卷展开，万事俱备…');
   } catch (err) {
     console.error('[qmsht] 初始化失败:', err);
@@ -38,7 +46,6 @@ if (!webglAvailable()) {
 }
 
 // 自动启动（测试用）：?autostart=1 直接进入游戏
-const TEST_PARAMS = new URLSearchParams(location.search);
 if (TEST_PARAMS.get('autostart') === '1') {
   setTimeout(() => {
     const g = window.game;
@@ -374,6 +381,18 @@ window.__selftest = (g) => {
   const sparkleDay = WATER_UNIFORMS.uSparkle.value; // 晴日正午光斑满值
   out.push('weather=' + (rainOk && snowOk && clearOk ? 'ok' : `FAIL(${g.weather.raininess.toFixed(2)}/${g.weather.snowiness.toFixed(2)})`));
   out.push('sparkle=' + (sparkleDay > 0.5 && sparkleRain < sparkleDay ? 'ok' : `FAIL(day=${sparkleDay.toFixed(2)} rain=${sparkleRain.toFixed(2)})`));
+  // 16) P3-4 埋点：首任务接受/完成率、会话、停留累计（走真实 accept→完成链路）
+  g.analytics.reset();
+  g.analytics.begin();
+  g.quests.state.bridge_gifts.status = 'available'; // 重置一条任务为可接
+  g.quests.state.bridge_gifts.objectiveIndex = 0;
+  Q.accept('bridge_gifts');                     // 首任务接受
+  Q.talkTo('huolang'); Q.talkTo('tea_stand'); Q.talkTo('huolang'); // 完成首任务
+  g.analytics.beat(); g.analytics.end();        // 结束一个会话
+  g.analytics.begin();
+  const am = g.analytics.metrics();
+  out.push('analytics=' + (am.accepted1 === 1 && am.completed1 === 1 && am.questsDone >= 1 && am.sessions === 1 && am.firstQuestRate === '100%'
+    ? 'ok' : 'FAIL(' + JSON.stringify(am) + ')'));
   // 场景统计
   let meshes = 0; g.scene.traverse(o => meshes++);
   const npcOk = g.npcList.every(npc => npc.children.length > 8);

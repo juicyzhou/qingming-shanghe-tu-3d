@@ -116,6 +116,12 @@
 |---|---|
 | `dddeb0a` | **雨雪粒子**：`render/weather.js` 新增天气系统——雨 500 条线雨丝（LineSegments）+ 雪 420 个柔白点（Points），粒子跟随玩家、按时间下落/摇摆、顶部循环；40~90s 随机换天（晴 55% / 雨 30% / 雪 15%，夜晚更易下雪），约 2.5s 平滑过渡。**水面光斑**：水面 shader 新增 `uSparkle`（太阳细碎光斑，随昼夜/晴雨强弱）与 `uRain`（雨天水色变暗、波纹加密）；雨天整体光照再暗 14%；雨声层（`AudioSys.setRain` 中高频噪声淡入淡出）。调试参数 `?weather=rain/snow/clear` 强制指定。selftest 扩至 13 任务+打卡+昼夜+三玩法+天气全过（weather=ok sparkle=ok），features/qa 全过 |
 
+## 阶段十八：P3-4 体验埋点（本地轻量漏斗）
+
+| 提交 | 内容 |
+|---|---|
+| `(待补)` | **埋点**：`game/Analytics.js` 本地统计（localStorage，零外部请求，保持"离线可玩"）——会话数 / 累计与平均停留（每帧心跳 + beforeunload 落盘）/ 首任务接受与完成（每会话各计一次）/ 任务完成 / 进店 / 小玩法获胜 / 灯谜 / 图鉴集齐。**面板**：`?analytics=1` 打开羊皮纸数据面板（11 行指标 + 导出 JSON + 清空），`window.__analytics()` 供控制台/巡检。修复一处真实回归：`TEST_PARAMS` 原声明在 Game 构建之后 → TDZ ReferenceError 会在每次正常加载时误触发 WebGL 兼容页，已上移到文件顶部。selftest 扩至 13 任务+打卡+昼夜+三玩法+天气+埋点全过，features/qa 全过 |
+
 ## 经验教训（后续开发必读）
 
 1. **真实 GPU 与 swiftshader 渲染有差异**：部分伪影仅真机出现，务必用"用户截图分析 + 真机调试工具（射线检测）"定位，勿只依赖本地无头测试。
