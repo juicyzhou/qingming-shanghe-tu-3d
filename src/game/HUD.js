@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { BUILDINGS, STALLS, RIVER, BRIDGE, GATE } from '../world/layout.js';
 
 const CSS = `
@@ -51,6 +52,41 @@ const CSS = `
   #hud .mg-prog{margin-top:12px;font-size:16px;color:#6e4a20;}
   #hud .mg-tip{font-size:15px;color:#5a3a20;margin-top:6px;}
   #hud .questlog{position:absolute;top:80px;left:14px;width:300px;max-height:60vh;overflow:auto;padding:14px 16px;font-size:14px;line-height:1.8;}
+  /* P0-1 任务指引：屏幕边缘箭头 + 距离标签 */
+  #hud .g-arrow{position:absolute;width:36px;height:36px;z-index:52;color:#a05820;font-size:28px;
+    display:flex;align-items:center;justify-content:center;pointer-events:none;
+    text-shadow:0 0 6px rgba(243,232,205,.95),0 0 2px rgba(243,232,205,.95),0 1px 2px rgba(0,0,0,.25);
+    transform-origin:50% 50%;}
+  #hud .g-tag{position:absolute;left:50%;top:84px;transform:translateX(-50%);z-index:52;pointer-events:none;
+    padding:4px 16px;font-size:14px;color:#4a2f10;white-space:nowrap;
+    background:rgba(243,232,205,.94);border:2px solid #8a6a44;border-radius:999px;
+    box-shadow:0 2px 8px rgba(70,50,20,.28);}
+  /* P0-2 开场引导 */
+  #hud .intro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:60;
+    background:radial-gradient(ellipse at 50% 40%,rgba(240,228,200,.97),rgba(205,185,145,.98));pointer-events:auto;}
+  #hud .intro .ipanel{width:min(560px,90vw);padding:30px 36px;text-align:center;line-height:2;}
+  #hud .intro h2{color:#5a2c10;font-size:26px;margin:0 0 12px;letter-spacing:6px;}
+  #hud .intro .istep{font-size:17px;color:#4a3420;min-height:88px;}
+  #hud .intro .istep b{color:#8a3a20;}
+  #hud .intro .keys{font-size:15px;color:#4a3420;background:rgba(255,250,230,.6);padding:10px 22px;border-radius:8px;border:1px dashed #a08050;margin:8px 0;line-height:2.2;}
+  #hud .intro .dots{margin-top:10px;letter-spacing:8px;color:#a08050;}
+  #hud .intro .btn{margin-top:18px;}
+  /* P0-3 暂停/设置菜单 */
+  #hud .pausemenu{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:58;
+    background:rgba(60,45,20,.3);pointer-events:auto;}
+  #hud .pmenu-panel{width:min(320px,88vw);padding:24px 28px;text-align:center;}
+  #hud .pmenu-panel h2{margin:0 0 14px;color:#5a2c10;font-size:24px;letter-spacing:8px;}
+  #hud .vol-row{display:flex;align-items:center;gap:12px;justify-content:center;margin:10px 0 6px;font-size:15px;color:#4a3420;}
+  #hud .vol-row input[type=range]{accent-color:#8a3a20;width:150px;}
+  #hud .pmenu-panel .btn{display:block;width:100%;margin-top:10px;}
+  #hud .btn.ghost{background:#efe2c0;color:#6e4a20;border-color:#a08050;}
+  #hud .btn.ghost:hover{background:#e0cd9f;}
+  /* P1-1 成就分享卡 */
+  #hud .achieve{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;background:rgba(60,45,20,.5);z-index:62;pointer-events:auto;}
+  #hud .achieve img{width:min(300px,72vw);border:4px solid #8a6a44;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.45);}
+  #hud .achieve .tip{font-size:13px;color:#f3e8cd;text-shadow:0 1px 3px rgba(0,0,0,.7);}
+  #hud .achieve .row{display:flex;gap:12px;}
   #hud .questlog h3{margin:0 0 6px;color:#6e4a20;}
   #hud .questlog .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #c8b088;padding:3px 0;}
   #hud .questlog .row.done{color:#5a6e3a;text-decoration:line-through;}
@@ -68,6 +104,9 @@ const CSS = `
     #hud .prompt{font-size:15px;bottom:10%;padding:8px 14px;}
     #hud .title h1{font-size:40px;}
     #hud .settle{width:92vw;}
+    #hud .g-tag{top:96px;font-size:12px;padding:3px 12px;}
+    #hud .intro .istep{font-size:15px;min-height:80px;}
+    #hud .intro h2{font-size:22px;}
   }
 `;
 
@@ -106,6 +145,19 @@ export class HUD {
       </div>
       <div class="settle panel" id="settle" style="display:none"></div>
       <div class="minigame panel" id="minigame" style="display:none"></div>
+      <div class="g-arrow" id="g-arrow" style="display:none">➤</div>
+      <div class="g-tag" id="g-tag" style="display:none"></div>
+      <div class="intro" id="intro" style="display:none"></div>
+      <div class="pausemenu" id="pausemenu" style="display:none">
+        <div class="panel pmenu-panel">
+          <h2>暂 停</h2>
+          <div class="vol-row">音量 <input type="range" id="vol" min="0" max="1" step="0.05"></div>
+          <button class="btn" id="pm-continue">继续漫游</button>
+          <button class="btn ghost" id="pm-restart">重新开始</button>
+          <button class="btn ghost" id="pm-title">返回标题</button>
+        </div>
+      </div>
+      <div class="achieve" id="achieve" style="display:none"></div>
       <div class="title" id="title">
         <h1>汴京漫游</h1>
         <div class="sub">· 清明上河图 · 3D 沉浸画卷 ·</div>
@@ -131,10 +183,177 @@ export class HUD {
       dOpts: h.querySelector('#d-opts'),
       settle: h.querySelector('#settle'),
       minigame: h.querySelector('#minigame'),
+      gArrow: h.querySelector('#g-arrow'),
+      gTag: h.querySelector('#g-tag'),
+      intro: h.querySelector('#intro'),
+      pausemenu: h.querySelector('#pausemenu'),
+      achieve: h.querySelector('#achieve'),
       title: h.querySelector('#title'),
     };
     this.dialogueOpen = false;
     this._toastTimer = null;
+  }
+
+  // ---- P0-1 任务指引：屏幕边缘箭头 + 距离 ----
+  updateGuide(game) {
+    const arrow = this.cache.gArrow, tag = this.cache.gTag;
+    // 对话/小玩法进行时隐藏指引，避免遮挡
+    if (game.hud.dialogueOpen || game.hud._minigameClose) {
+      arrow.style.display = 'none'; tag.style.display = 'none'; return;
+    }
+    const t = game.getGuideTarget();
+    if (!t) { arrow.style.display = 'none'; tag.style.display = 'none'; return; }
+    const dx = t.x - game.player.px, dz = t.z - game.player.pz;
+    const dist = Math.hypot(dx, dz);
+    tag.textContent = `☛ ${t.title} · ${dist.toFixed(0)}m`;
+    tag.style.display = 'block';
+    if (dist < 2.5) { arrow.style.display = 'none'; return; } // 已在目标旁
+    // 世界坐标 → 屏幕坐标
+    game.camera.updateMatrixWorld(true);
+    const v = new THREE.Vector3(t.x, t.y, t.z).project(game.camera);
+    const sx = (v.x * 0.5 + 0.5) * innerWidth;
+    const sy = (-v.y * 0.5 + 0.5) * innerHeight;
+    const cx = innerWidth / 2, cy = innerHeight / 2;
+    // 屏幕内侧框内（不贴边）→ 隐藏箭头（目标就在眼前）
+    const off = 90;
+    if (v.z < 1 && sx > off && sx < innerWidth - off && sy > off && sy < innerHeight - off) {
+      arrow.style.display = 'none';
+      return;
+    }
+    // 目标在相机背后时镜像方向，保证箭头指向正确的一侧
+    let dirX = sx - cx, dirY = sy - cy;
+    if (v.z >= 1) { dirX = -dirX; dirY = -dirY; }
+    const ang = Math.atan2(dirY, dirX);
+    const margin = 44;
+    const halfW = innerWidth / 2 - margin, halfH = innerHeight / 2 - margin;
+    const scale = Math.min(
+      Math.abs(halfW / Math.max(Math.abs(Math.cos(ang)), 1e-6)),
+      Math.abs(halfH / Math.max(Math.abs(Math.sin(ang)), 1e-6))
+    );
+    const bx = cx + Math.cos(ang) * scale;
+    const by = cy + Math.sin(ang) * scale;
+    arrow.style.display = 'flex';
+    arrow.style.left = bx + 'px';
+    arrow.style.top = by + 'px';
+    arrow.style.transform = `translate(-50%,-50%) rotate(${ang}rad)`;
+  }
+
+  // ---- P0-2 开场引导：剧情 + 操作一屏一讲 ----
+  showIntro(game, onDone) {
+    const el = this.cache.intro;
+    const touch = game.touch && game.touch.enabled;
+    const steps = touch ? [
+      { h: '汴京 · 序', body: '天禧三年春，你是一位进京赶考的举子，行至汴京城郊，虹桥在望。' },
+      { h: '汴京 · 行', body: '汴河如带，市声渐起。桥头货郎朝你招手——似乎正需要帮手。' },
+      { h: '操作 · 行走', body: '用<b>左下摇杆</b>行走，<b>右侧拖动</b>转动视角。', keys: '左摇杆 移动<br>右侧 拖动 视角' },
+      { h: '操作 · 接任务', body: '靠近带 <b style="color:#a05820">?</b> 标记的人物，点 <b>交谈</b> 即可对话、接任务。', keys: '交谈 / 视角 / 任务 / 菜单 按钮' },
+    ] : [
+      { h: '汴京 · 序', body: '天禧三年春，你是一位进京赶考的举子，行至汴京城郊，虹桥在望。' },
+      { h: '汴京 · 行', body: '汴河如带，市声渐起。桥头货郎朝你招手——似乎正需要帮手。' },
+      { h: '操作 · 行走', body: '<b>WASD</b> 行走，<b>Shift</b> 疾跑，<b>鼠标</b> 转动视角。', keys: 'WASD 移动 · Shift 疾跑<br>鼠标 转动视角' },
+      { h: '操作 · 接任务', body: '靠近带 <b style="color:#a05820">?</b> 标记的人物，按 <b>E</b> 对话、接任务。', keys: 'E 交谈/互动 · V 切换视角<br>J 任务清单 · 顶部箭头指向目标' },
+    ];
+    let i = 0;
+    const render = () => {
+      const s = steps[i];
+      el.innerHTML = `
+        <div class="ipanel">
+          <h2>${s.h}</h2>
+          <div class="istep">${s.body}</div>
+          ${s.keys ? `<div class="keys">${s.keys}</div>` : ''}
+          <div class="dots">${steps.map((_, k) => (k === i ? '●' : '○')).join('')}</div>
+          <button class="btn" id="intro-next">${i === steps.length - 1 ? '开始漫游' : '下一页'}</button>
+        </div>`;
+      el.querySelector('#intro-next').onclick = () => {
+        i++;
+        if (i < steps.length) render();
+        else { el.style.display = 'none'; onDone(); }
+      };
+    };
+    el.style.display = 'flex';
+    render();
+  }
+
+  // ---- P0-3 暂停/设置菜单 ----
+  openPause(game) {
+    const el = this.cache.pausemenu;
+    el.style.display = 'flex';
+    const vol = el.querySelector('#vol');
+    vol.value = game.audio.volume || 0;
+    vol.oninput = () => game.audio.setVolume(parseFloat(vol.value));
+    el.querySelector('#pm-continue').onclick = () => game.togglePause();
+    el.querySelector('#pm-restart').onclick = () => location.reload();
+    el.querySelector('#pm-title').onclick = () => location.reload();
+  }
+
+  closePause() {
+    this.cache.pausemenu.style.display = 'none';
+  }
+
+  // ---- P1-1 成就分享卡：Canvas 生成卡片图，可保存/长按分享 ----
+  showAchievement(game) {
+    const c = document.createElement('canvas');
+    c.width = 640; c.height = 900;
+    const ctx = c.getContext('2d');
+    // 羊皮纸底
+    const bg = ctx.createLinearGradient(0, 0, 0, 900);
+    bg.addColorStop(0, '#f3e8cd'); bg.addColorStop(1, '#e0cd9f');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, 640, 900);
+    // 双线描框
+    ctx.strokeStyle = '#8a6a44'; ctx.lineWidth = 8;
+    ctx.strokeRect(12, 12, 616, 876);
+    ctx.lineWidth = 2; ctx.strokeRect(24, 24, 592, 852);
+    ctx.textAlign = 'center';
+    // 标题
+    ctx.fillStyle = '#5a2c10';
+    ctx.font = 'bold 46px "Kaiti SC","KaiTi","STKaiti",serif';
+    ctx.fillText('汴京漫游', 320, 108);
+    ctx.font = '26px "Kaiti SC","KaiTi",serif';
+    ctx.fillStyle = '#8a3a20';
+    ctx.fillText('· 画卷集齐 ·', 320, 156);
+    // 印章
+    ctx.fillStyle = '#a03a28'; ctx.font = 'bold 34px serif';
+    ctx.fillText('集', 514, 172);
+    ctx.strokeStyle = '#a03a28'; ctx.lineWidth = 3; ctx.strokeRect(488, 126, 54, 54);
+    // 游戏实拍（缩小贴入）
+    try {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(40, 190, 560, 300); ctx.clip();
+      ctx.drawImage(game.renderer.domElement, 40, 190, 560, 300);
+      ctx.restore();
+      ctx.strokeStyle = '#a08050'; ctx.lineWidth = 2; ctx.strokeRect(40, 190, 560, 300);
+    } catch { /* 无帧时略过截图 */ }
+    // 统计
+    ctx.fillStyle = '#4a3420';
+    ctx.font = '26px "Kaiti SC","KaiTi",serif';
+    const rows = [
+      `完成任务  ${game.quests.doneCount()} / 8`,
+      `声望      ${game.quests.stats.reputation}`,
+      `赚得      ${game.quests.stats.coinsEarned} 文`,
+      `结识人物  ${game.npcList.length} 位`,
+    ];
+    let yy = 560;
+    for (const r of rows) { ctx.fillText(r, 320, yy); yy += 56; }
+    ctx.fillStyle = '#7a5f38';
+    ctx.font = '21px "Kaiti SC","KaiTi",serif';
+    ctx.fillText('天禧三年 · 汴京城', 320, 820);
+    ctx.fillText('—— 清明上河图 3D 漫游 ——', 320, 858);
+    const dataUrl = c.toDataURL('image/png');
+    const el = this.cache.achieve;
+    el.innerHTML = `
+      <img src="${dataUrl}" alt="画卷集齐成就卡">
+      <div class="tip">${game.touch && game.touch.enabled ? '长按图片即可保存分享' : '右键保存图片 · 或点下方保存'}</div>
+      <div class="row">
+        <button class="btn" id="ach-dl">保存图片</button>
+        <button class="btn ghost" id="ach-close">收下</button>
+      </div>`;
+    el.style.display = 'flex';
+    el.querySelector('#ach-close').onclick = () => { el.style.display = 'none'; };
+    el.querySelector('#ach-dl').onclick = () => {
+      const a = document.createElement('a');
+      a.href = dataUrl; a.download = '汴京漫游画卷.png';
+      a.click();
+    };
   }
 
   showTitle(onStart) {
@@ -229,7 +448,12 @@ export class HUD {
       <div class="rew" style="font-size:14px;color:#7a5f38">已完成任务 ${game.quests.stats.completed} · 声望 ${game.quests.stats.reputation}</div>
       <button class="btn" id="settle-ok">收下</button>`;
     s.style.display = 'block';
-    s.querySelector('#settle-ok').onclick = () => (s.style.display = 'none');
+    s.querySelector('#settle-ok').onclick = () => {
+      s.style.display = 'none';
+      // P1-1：全部任务完成 → 弹「画卷集齐」成就分享卡
+      const total = Object.keys(game.quests.state).length;
+      if (game.quests.doneCount() >= total) this.showAchievement(game);
+    };
   }
 
   // ---- 任务日志 ----
@@ -352,6 +576,18 @@ export class HUD {
     g.strokeStyle = '#5a2008';
     g.lineWidth = 1.5;
     g.stroke();
+    // 任务目标金色点（P0-1）
+    const gd = game.getGuideTarget();
+    if (gd) {
+      const [gx, gz] = map(gd.x, gd.z);
+      g.fillStyle = '#ffd76a';
+      g.beginPath();
+      g.arc(gx, gz, 5.5, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = '#8a5a16';
+      g.lineWidth = 1.5;
+      g.stroke();
+    }
     // 边框
     g.strokeStyle = '#8a6a44';
     g.lineWidth = 3;

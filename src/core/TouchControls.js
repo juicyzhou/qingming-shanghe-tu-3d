@@ -13,6 +13,7 @@ const CSS = `
   .t-e{right:22px;bottom:118px;background:rgba(140,58,32,.6);}
   .t-v{right:22px;top:86px;}
   .t-j{right:100px;top:86px;}
+  .t-p{right:22px;top:16px;width:52px;height:52px;font-size:13px;}
   .t-mg{position:fixed;z-index:47;left:50%;bottom:22%;transform:translateX(-50%);width:180px;height:64px;
     border-radius:16px;border:2px solid #f3e8cd;background:rgba(140,58,32,.75);color:#f3e8cd;
     font-family:"Kaiti SC","KaiTi",serif;font-size:20px;letter-spacing:4px;pointer-events:auto;}
@@ -46,13 +47,19 @@ export class TouchControls {
     this.btnE = el('button', 't-btn t-e', '交谈');
     this.btnV = el('button', 't-btn t-v', '视角');
     this.btnJ = el('button', 't-btn t-j', '任务');
+    this.btnP = el('button', 't-btn t-p', '菜单'); // 暂停/设置（P0-3）
     this.btnE.style.display = 'none';   // 有可交互目标时才显示
     document.body.appendChild(this.btnE);
     document.body.appendChild(this.btnV);
     document.body.appendChild(this.btnJ);
+    document.body.appendChild(this.btnP);
     this.btnE.addEventListener('click', (e) => { e.preventDefault(); input.tapKey('KeyE'); });
     this.btnV.addEventListener('click', (e) => { e.preventDefault(); input.tapKey('KeyV'); });
     this.btnJ.addEventListener('click', (e) => { e.preventDefault(); input.tapKey('KeyJ'); });
+    this.btnP.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (this.onPause) this.onPause(); // 由 Game 注入 togglePause
+    });
 
     this._bindJoystick();
     this._bindLook();

@@ -6,7 +6,7 @@ import { World } from '../world/World.js';
 import { Player } from '../chars/Player.js';
 import { Npc, ROLE_LABEL } from '../chars/Npc.js';
 import { NPC_DEFS } from '../data/npcs.js';
-import { QUESTS } from '../data/quests.js';
+import { QUESTS, questById } from '../data/quests.js';
 import { Inventory } from '../game/Inventory.js';
 import { QuestSystem } from '../game/QuestSystem.js';
 import { HUD } from '../game/HUD.js';
@@ -48,6 +48,7 @@ export class Game {
     this.audio = new AudioSys();
     this.hud = new HUD();
     this.touch = new TouchControls(this.input); // 触屏虚拟摇杆/按钮（非触屏为 no-op）
+    this.touch.onPause = () => this.togglePause(); // 触屏"菜单"按钮
     this.world = new World(this.scene);
 
     if (qp.get('debug') === '1') { // 调试：点按钮射线检测屏幕中心
@@ -98,6 +99,8 @@ export class Game {
     this._dialogNpc = null;
     this._inside = null;              // 当前进入的店铺 interior
     this._prevViewMode = 3;
+    this._paused = false;             // 暂停菜单（P0-3）
+    this._introActive = false;        // 开场引导进行中（P0-2）
 
     this.hud.showTitle(() => this.start());
     this.hud.setPrompt('');
@@ -106,11 +109,44 @@ export class Game {
 
   start() {
     if (new URLSearchParams(location.search).get('noaudio') !== '1') this.audio.ensure();
-    this.input.requestLock();
     this.hud.update(this);
     this._running = true;
     this._clock.start();
+    // 开场引导（P0-2）：自动化测试 & 看过一遍的老玩家直接进游戏
+    const auto = new URLSearchParams(location.search).get('autostart') === '1';
+    const seenIntro = localStorage.getItem('qmsht_intro') === '1';
+    if (auto || seenIntro) {
+      this.input.requestLock();
+    } else {
+      this._introActive = true;
+      this.input.suspendLock = true;
+      this.input.exitLock(); // 引导期间不锁定指针，保证可点按钮
+      this.hud.showIntro(this, () => this._endIntro());
+    }
     this._loop();
+  }
+
+  // 引导结束：恢复指针锁定并进入漫游
+  _endIntro() {
+    this._introActive = false;
+    this.input.suspendLock = false;
+    this.input.requestLock();
+    localStorage.setItem('qmsht_intro', '1');
+    this.hud.update(this);
+  }
+
+  // 暂停/继续（P0-3）
+  togglePause() {
+    if (this._introActive || this.hud.dialogueOpen || this.hud._minigameClose) return;
+    this._paused = !this._paused;
+    if (this._paused) {
+      this._prevLocked = this.input.locked;
+      this.input.exitLock(); // 释放指针以便操作菜单
+      this.hud.openPause(this);
+    } else {
+      this.hud.closePause();
+      if (this._prevLocked) this.input.requestLock();
+    }
   }
 
   _loop() {
@@ -144,13 +180,20 @@ export class Game {
   }
 
   update(dt) {
+    if (this._paused || this._introActive) {
+      // 暂停/引导：世界与 NPC 保持轻动画，不响应玩家输入与交互
+      for (const npc of this.npcList) npc.update(dt, this.player);
+      this.world.update(dt, this._t);
+      return;
+    }
     if (this.input.wasPressed('KeyF')) this._debugRay();
     if (this.input.wasPressed('KeyV') && !this.hud.dialogueOpen && !this._inside) this.player.toggleView();
     if (this.input.wasPressed('KeyJ')) this.hud.toggleQuestLog(this);
     if (this.input.wasPressed('KeyE')) this.tryInteract();
     if (this.input.wasPressed('Escape')) {
       if (this.hud.dialogueOpen) this._closeDialogue();
-      else this.input.exitLock();
+      else if (this.hud._minigameClose) { this.hud._minigameClose(); this.hud._minigameClose = null; }
+      else this.togglePause();
     }
 
     if (!this.hud.dialogueOpen && !this.hud._minigameClose) {
@@ -172,6 +215,7 @@ export class Game {
 
     this._hudAcc += dt;
     if (this._hudAcc > 0.25) { this._hudAcc = 0; this.hud.update(this); }
+    this.hud.updateGuide(this); // 任务指引箭头（P0-1）
   }
 
   _nearestNpc(maxDist) {
@@ -314,6 +358,32 @@ export class Game {
         if (obj.npc) { const t = this.npcs.get(obj.npc); if (t) t.addQuestMark(); }
       }
     }
+  }
+
+  // 任务指引目标（P0-1）：取第一个进行中任务的当前目标；
+  // 无进行中任务则指向第一个可接任务的发放人（引导去接首个任务）
+  getGuideTarget() {
+    let qid = null;
+    const active = this.quests.activeList()[0];
+    if (active) qid = active.qid;
+    else {
+      for (const q of QUESTS) {
+        if (this.quests.state[q.id].status === 'available') { qid = q.id; break; }
+      }
+    }
+    if (!qid) return null;
+    const q = questById(qid);
+    const obj = this.quests.currentObjective(qid);
+    let x = null, y = 1.4, z = 0;
+    if (obj.npc) {
+      const npc = this.npcs.get(obj.npc);
+      if (npc) { x = npc.position.x; y = npc.position.y + 1.4; z = npc.position.z; }
+    } else if (obj.interactable) {
+      const it = this.world.interactables.find(i => i.id === obj.interactable);
+      if (it) { x = it.x; z = it.z; y = 0.8; }
+    }
+    if (x == null) return null;
+    return { qid, title: q.title, text: obj.text, x, y, z };
   }
 
   _resize() {

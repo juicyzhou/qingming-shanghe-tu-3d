@@ -46,6 +46,15 @@ if (TEST_PARAMS.get('autostart') === '1') {
       g._running = false;
       return;
     }
+    if (TEST_PARAMS.get('features') === '1') {
+      g.start();
+      const div = document.createElement('div');
+      div.id = 'probe-report';
+      div.textContent = window.__features(g);
+      document.body.appendChild(div);
+      g._running = false;
+      return;
+    }
     // 先设自由相机，再启动 → 首帧即目标取景（截图/探针用）
     const view = TEST_PARAMS.get('view') || 'aerial';
     if (TEST_PARAMS.get('t')) g._t = parseFloat(TEST_PARAMS.get('t')); // 设定动画相位
@@ -121,6 +130,56 @@ if (TEST_PARAMS.get('autostart') === '1') {
     g.start();
   }, 400);
 }
+
+window.__features = (g) => {
+  // P0-1 任务指引 / P0-2 开场引导 / P0-3 暂停 / P1-1 成就分享卡
+  const out = [];
+  // 1) 无进行中任务 → 指向第一个可接任务的发放人（王货郎）
+  const t0 = g.getGuideTarget();
+  out.push('guide0=' + (t0 && t0.title === '桥头干粮' ? 'huolang' : 'FAIL:' + (t0 && t0.title)));
+  // 2) 接任务后 → 指向当前目标（王货郎）
+  g.quests.accept('bridge_gifts');
+  const t1 = g.getGuideTarget();
+  out.push('guide1=' + (t1 && t1.qid === 'bridge_gifts' && t1.title === '桥头干粮' ? 'ok' : 'FAIL'));
+  // 3) 目标推进后指向茶摊（NPC 目标切换）
+  g.quests.talkTo('huolang');
+  const t2 = g.getGuideTarget();
+  out.push('guide2=' + (t2 && t2.qid === 'bridge_gifts' && g.quests.state.bridge_gifts.objectiveIndex === 1 ? 'ok' : 'FAIL'));
+  // 完成 bridge_gifts，避免其仍占据"第一个进行中任务"
+  g.quests.talkTo('tea_stand'); g.quests.talkTo('huolang');
+  // 4) 目标为场景交互物（药草）→ 有坐标
+  g.quests.accept('herbs'); g.quests.talkTo('daifu');
+  const t3 = g.getGuideTarget();
+  out.push('guide3=' + (t3 && Math.hypot(t3.x - 9.5, t3.z - 18.6) < 3 ? 'herb' : 'FAIL'));
+  // 5) 指引箭头渲染
+  g.hud.updateGuide(g);
+  const arrowOn = g.hud.cache.gArrow.style.display === 'flex' || g.hud.cache.gArrow.style.display === 'block';
+  const tagTxt = g.hud.cache.gTag.textContent;
+  out.push('arrow=' + arrowOn + ' tag=' + (tagTxt && tagTxt.includes('m') ? 'dist' : 'FAIL'));
+  // 6) P0-3 暂停开关 + 菜单显示
+  g.togglePause();
+  const pauseOn = g._paused === true && g.hud.cache.pausemenu.style.display === 'flex';
+  g.togglePause();
+  const pauseOff = g._paused === false && g.hud.cache.pausemenu.style.display === 'none';
+  out.push('pause=' + pauseOn + '/' + pauseOff);
+  // 7) P0-2 开场引导渲染
+  let introDone = false;
+  g.hud.showIntro(g, () => { introDone = true; });
+  const introShown = g.hud.cache.intro.style.display === 'flex' && !!document.getElementById('intro-next');
+  // 点到底（触发 onDone）
+  let guard = 0;
+  while (document.getElementById('intro-next') && guard++ < 10) {
+    document.getElementById('intro-next').click();
+  }
+  out.push('intro=' + introShown + ' done=' + introDone);
+  // 8) P1-1 成就分享卡渲染（生成 PNG + 可下载按钮）
+  g.hud.showAchievement(g);
+  const img = g.hud.cache.achieve.querySelector('img');
+  const dlBtn = g.hud.cache.achieve.querySelector('#ach-dl');
+  out.push('achieve=' + (img && img.src.startsWith('data:image/png') ? 'png' : 'FAIL') + ' dl=' + !!dlBtn);
+  g.hud.cache.achieve.style.display = 'none';
+  return out.join(' | ');
+};
 
 window.__selftest = (g) => {
   const out = [];

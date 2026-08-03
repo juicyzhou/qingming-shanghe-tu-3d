@@ -10,6 +10,8 @@ export class AudioSys {
     this.noteIdx = 0;
     this.stepAcc = 0;
     this.enabled = true;
+    this.volume = 1; // 用户音量（P0-3，可记忆）
+    try { this.volume = parseFloat(localStorage.getItem('qmsht_vol')) || 1; } catch {}
   }
 
   // 浏览器自动播放策略：首次用户手势后调用
@@ -22,7 +24,7 @@ export class AudioSys {
     if (!AC) return;
     this.ctx = new AC();
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0.9;
+    this.master.gain.value = 0.9 * this.volume;
     this.master.connect(this.ctx.destination);
     this.bgmGain = this.ctx.createGain();
     this.bgmGain.gain.value = 0.0;
@@ -108,6 +110,13 @@ export class AudioSys {
       this.pluck(AudioSys.PENTA2[(this.noteIdx >> 2) % 5] * 1.5, t + 0.28, 0.5, 0.05);
     }
     this.noteIdx++;
+  }
+
+  // 总音量 0~1（P0-3 暂停菜单滑块），持久化
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(1, v));
+    if (this.master) this.master.gain.value = 0.9 * this.volume;
+    try { localStorage.setItem('qmsht_vol', String(this.volume)); } catch {}
   }
 
   setBgm(on) {
