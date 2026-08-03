@@ -96,7 +96,7 @@
 
 | 提交 | 内容 |
 |---|---|
-| `(待补)` | **P1-5 桌面描边可选**：composer 暴露 `outlinePass`，暂停菜单加「墨线描边」开关（运行时 enabled 切换 + localStorage 记忆，触屏恒关）。**P3-1 分享元信息**：index.html 增加 og/twitter meta（title/description/type/url/image）+ 内联 SVG 汴字 favicon；生成 `public/og-cover.jpg`（1200×630，headless 截取空中全景，随构建发布，微信/QQ 分享显示缩略图）。**P3-2 宣传素材**：小红书竖版海报（1080×1440）/ 公众号横版海报（1920×1080，HTML 模板叠字后截图）/ 知乎技术文（promo/tech-article.md，约 1800 字，含着色器代码与坑）；短视频因环境无 ffmpeg 交付 `capture-cinematic.mjs` 帧序列脚本 + 编码命令。**P3-3 微信兼容**：`window.__inWeChat` UA 检测 + `enableOnGesture` 音频手势兜底（WKWebView 常见）；真机 12 项验收清单 docs/06。另加 `?cinematic=1` 自由相机持续运行（宣传帧捕获用） |
+| `7dbf22e` | **P1-5 桌面描边可选**：composer 暴露 `outlinePass`，暂停菜单加「墨线描边」开关（运行时 enabled 切换 + localStorage 记忆，触屏恒关）。**P3-1 分享元信息**：index.html 增加 og/twitter meta（title/description/type/url/image）+ 内联 SVG 汴字 favicon；生成 `public/og-cover.jpg`（1200×630，headless 截取空中全景，随构建发布，微信/QQ 分享显示缩略图）。**P3-2 宣传素材**：小红书竖版海报（1080×1440）/ 公众号横版海报（1920×1080，HTML 模板叠字后截图）/ 知乎技术文（promo/tech-article.md，约 1800 字，含着色器代码与坑）；短视频因环境无 ffmpeg 交付 `capture-cinematic.mjs` 帧序列脚本 + 编码命令。**P3-3 微信兼容**：`window.__inWeChat` UA 检测 + `enableOnGesture` 音频手势兜底（WKWebView 常见）；真机 12 项验收清单 docs/06。另加 `?cinematic=1` 自由相机持续运行（宣传帧捕获用） |
 
 ## 经验教训（后续开发必读）
 
