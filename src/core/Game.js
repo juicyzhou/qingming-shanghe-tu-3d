@@ -7,6 +7,8 @@ import { Player } from '../chars/Player.js';
 import { Npc, ROLE_LABEL } from '../chars/Npc.js';
 import { NPC_DEFS } from '../data/npcs.js';
 import { QUESTS, questById } from '../data/quests.js';
+import { LANDMARKS } from '../data/landmarks.js';
+import { LIGHT_UNIFORMS, FOG_UNIFORMS } from '../render/materials.js';
 import { Inventory } from '../game/Inventory.js';
 import { QuestSystem } from '../game/QuestSystem.js';
 import { HUD } from '../game/HUD.js';
@@ -83,6 +85,13 @@ export class Game {
         this.npcs.set(def.id || `npc_${i}`, npc);
         this.npcList.push(npc);
       });
+      // P2-2 作息标记：夜巡人夜间出现；摊贩/摊主白天出摊，入夜收摊（任务 NPC 恒显）
+      const DAY_ROLES = new Set(['vendor', 'cook', 'acrobat', 'storyteller', 'fish', 'farmer', 'porter', 'diviner']);
+      this.npcList.forEach((npc, i) => {
+        npc._thin = i;
+        if (npc.npcId === 'gengfu' || npc.npcId === 'xunye') npc.nightOnly = true;
+        else if (DAY_ROLES.has(npc.def.role) && !npc.npcId.startsWith('keeper_')) npc.dayOnly = true;
+      });
       // 掌柜站到各店内室预留空位（避免与家具交叉）
       for (const int of this.world.interiors) {
         const k = this.npcs.get('keeper_' + int.def.id);
@@ -115,6 +124,16 @@ export class Game {
     this._maxPixelLevel = touch ? 3 : 2;
     this._pixelLevel = this._maxPixelLevel;
     this._frameSamples = [];
+    // P2-2 时辰时钟：默认未时午后，一日 = 8 分钟（?hour= 设起始，?daylen= 设日长秒，?nocycle=1 关昼夜）
+    this.hour = parseFloat(qp.get('hour') ?? '14') % 24;
+    this.dayLenSec = parseFloat(qp.get('daylen') ?? '480');
+    this.cycle = qp.get('nocycle') !== '1';
+    // 昼夜颜色锚点（白昼=当前暮色画风，夜晚=灯笼暖调 + 深蓝夜空）
+    this._ambDay = new THREE.Color('#f4dfbe'); this._ambNight = new THREE.Color('#5a3a28');
+    this._sunDay = new THREE.Color('#ffe8bf'); this._sunNight = new THREE.Color('#7a4a2e');
+    this._bgDay = new THREE.Color('#e2cfa8'); this._bgNight = new THREE.Color('#1d2030');
+    // P2-3 打卡收集
+    this.landmarksCollected = new Set();
 
     this.hud.showTitle(() => this.start());
     this.hud.setPrompt('');
@@ -259,13 +278,27 @@ export class Game {
       this.player.update(dt, this.input);
     }
 
+    // P2-2 时辰推进 + 昼夜光照
+    if (this.cycle) {
+      this.hour = (this.hour + (dt / this.dayLenSec) * 24) % 24;
+      this._applyTimeLighting();
+    }
+    this._updateLandmarks(); // P2-3 打卡检测
+
     this._updateInteriorTransition(); // 步行进出店铺
 
-    // 性能：远处 NPC 隐藏（任务相关 NPC 始终显示）
+    // 性能：远处 NPC 隐藏（任务相关 NPC 始终显示）+ P2-2 作息
     const camPos = this.camera.position;
-    for (const npc of this.npcList) {
+    const nf = this._nightFactor();
+    for (let i = 0; i < this.npcList.length; i++) {
+      const npc = this.npcList[i];
       npc.update(dt, this.player);
-      npc.visible = !!npc.questMark || npc.position.distanceTo(camPos) < 48;
+      let vis = !!npc.questMark || npc.position.distanceTo(camPos) < 48;
+      if (npc.nightOnly) vis = nf > 0.5 && vis;
+      else if (nf > 0.5 && !npc.questMark && !npc.npcId.startsWith('keeper_')) {
+        if (npc.dayOnly || (i % 2 === 0)) vis = false; // 摊贩收摊 + 街人抽稀
+      }
+      npc.visible = vis;
     }
     this.world.update(dt, this._t);
 
@@ -275,6 +308,47 @@ export class Game {
     this._hudAcc += dt;
     if (this._hudAcc > 0.25) { this._hudAcc = 0; this.hud.update(this); }
     this.hud.updateGuide(this); // 任务指引箭头（P0-1）
+  }
+
+  // P2-2 夜因子：0=白天 → 1=深夜（18:30 入夜、21 全黑、5:00 破晓、7 天亮）
+  _nightFactor() {
+    const h = this.hour;
+    if (h >= 18.5 && h <= 24) return Math.min(1, (h - 18.5) / 2.5);
+    if (h >= 0 && h <= 5) return 1;
+    if (h > 5 && h <= 7) return Math.max(0, 1 - (h - 5) / 2);
+    return 0;
+  }
+
+  // P2-2 昼夜光照：白昼保持当前暖色画风；入夜整体微暗 + 夜空转深（建筑靠"灯笼暖光"保持可见）
+  _applyTimeLighting() {
+    const nf = this._nightFactor();
+    const day = 1 - nf;
+    LIGHT_UNIFORMS.uAmbient.value.copy(this._ambDay).lerp(this._ambNight, nf)
+      .multiplyScalar(0.53 * (0.8 + 0.2 * day));
+    LIGHT_UNIFORMS.uSunColor.value.copy(this._sunDay).lerp(this._sunNight, nf)
+      .multiplyScalar(0.8 * (0.62 + 0.38 * day));
+    const bg = this._bgDay.clone().lerp(this._bgNight, nf);
+    FOG_UNIFORMS.uFogColor.value.copy(bg);
+    this.scene.background.copy(bg);
+    if (this.scene.fog) this.scene.fog.color.copy(bg);
+  }
+
+  // P2-3 打卡：走进景点范围自动盖章；集齐弹画卷图鉴成就卡
+  _updateLandmarks() {
+    if (this.landmarksCollected.size >= LANDMARKS.length) return;
+    for (const lm of LANDMARKS) {
+      if (this.landmarksCollected.has(lm.id)) continue;
+      if (Math.hypot(lm.x - this.player.px, lm.z - this.player.pz) < lm.r) {
+        this.landmarksCollected.add(lm.id);
+        this.audio?.chime();
+        this.hud.toast(`打卡「${lm.name}」· ${lm.desc}`);
+        this.hud.update(this);
+        if (this.landmarksCollected.size === LANDMARKS.length) {
+          this.hud.toast('汴京十二景集齐，画卷完整展开！');
+          setTimeout(() => this.hud.showAchievement(this, 'landmarks'), 900);
+        }
+      }
+    }
   }
 
   _nearestNpc(maxDist) {

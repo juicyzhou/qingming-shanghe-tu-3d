@@ -55,7 +55,7 @@ export const NPC_DEFS = [
   n('', '韩公子', 'guest', -3, 10),
   n('', '苗家嫂子', 'woman', 3, -8),
   n('', '秦木匠', 'vendor', -16, 16),
-  n('', '许半仙', 'vendor', -28, 20),
+  n('suanming', '许半仙', 'diviner', -28, 20),   // 卦摊先生（P2-4 猜谜任务）
   n('', '刘婶', 'cook', -7.5, 20.5),
   n('', '潘货郎', 'huolang', -22, -2),
   n('', '罗班头', 'acrobat', -30, 8),
@@ -77,6 +77,10 @@ export const NPC_DEFS = [
   n('', '侯农夫', 'farmer', 10, -80),
   n('', '林牧童', 'child', -10, -78, { behavior: 'wander' }),
   ...SHOPKEEPER_DEFS,
+
+  // ---- P2-2 夜巡人（入夜后出现在街上） ----
+  n('gengfu', '巡夜老王', 'watcher', -3, 10, { behavior: 'wander', heading: Math.PI }),
+  n('xunye', '夜巡张捕快', 'watcher', 4, -20, { behavior: 'wander' }),
 ];
 
 export const NPC_COUNT = NPC_DEFS.length;

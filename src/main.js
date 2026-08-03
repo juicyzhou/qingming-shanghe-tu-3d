@@ -282,7 +282,53 @@ window.__selftest = (g) => {
   out.push('cloth=' + I.has('cloth'));
   Q.talkTo('buzhuang');
   out.push('clothDone=' + Q.isDone('deliver_cloth'));
-  out.push('SUMMARY done=' + Q.stats.completed + '/8 coins=' + I.coins + ' rep=' + Q.stats.reputation);
+  // 9) P2-4 新增任务：客栈添柴 / 醉仙楼送酒 / 米铺送粮
+  Q.accept('inn_wood');
+  Q.talkTo('keeper_inn');
+  Q.interact('wood');
+  out.push('wood=' + I.has('wood'));
+  Q.talkTo('keeper_inn');
+  out.push('innWood=' + Q.isDone('inn_wood'));
+  Q.accept('tavern_wine');
+  Q.talkTo('keeper_tavern');
+  Q.interact('wine_jar');
+  Q.talkTo('chuanfu');
+  Q.talkTo('keeper_tavern');
+  out.push('tavernWine=' + Q.isDone('tavern_wine'));
+  Q.accept('rice_deliver');
+  Q.talkTo('keeper_rice');
+  Q.interact('rice_sack');
+  Q.talkTo('keeper_inn');
+  Q.talkTo('keeper_rice');
+  out.push('riceDeliver=' + Q.isDone('rice_deliver'));
+  // 10) P2-4 猜谜：选错不推进、选对推进、复命完成
+  Q.accept('riddle');
+  Q.talkTo('suanming');
+  const wrongStuck = !Q.riddleAnswer('riddle', 2) && Q.status('riddle') === 'active' && Q.state.riddle.objectiveIndex === 1;
+  const rightAdvance = Q.riddleAnswer('riddle', 0) && Q.state.riddle.objectiveIndex === 2;
+  Q.talkTo('suanming');
+  out.push('riddle=' + (wrongStuck && rightAdvance && Q.isDone('riddle') ? 'ok' : 'FAIL'));
+  // 11) P2-4 说书人长线：取稿→交稿→送信→复命
+  Q.accept('storyteller_script');
+  Q.talkTo('shuoshuren');
+  Q.interact('script');
+  Q.talkTo('shuoshuren');
+  Q.talkTo('shoujiang');
+  Q.talkTo('shuoshuren');
+  out.push('storyScript=' + Q.isDone('storyteller_script'));
+  out.push('SUMMARY done=' + Q.stats.completed + '/' + Object.keys(Q.state).length + ' coins=' + I.coins + ' rep=' + Q.stats.reputation);
+  // 12) P2-3 打卡：走到虹桥自动盖章
+  g.landmarksCollected.clear();
+  g.player.px = 0; g.player.pz = 30;
+  g._updateLandmarks();
+  const lmBridge = g.landmarksCollected.has('bridge');
+  const lmCount = g.landmarksCollected.size;
+  out.push('landmark=' + (lmBridge && lmCount === 1 ? 'ok' : `FAIL(${lmCount})`));
+  // 13) P2-2 作息：夜因子 深夜≈1、午后≈0；时辰映射
+  const nfNight = g._nightFactor();
+  g.hour = 22; const nf22 = g._nightFactor();
+  g.hour = 14; const nf14 = g._nightFactor();
+  out.push(`night=${nf22 > 0.9 ? 'on' : 'FAIL(' + nf22.toFixed(2) + ')'} day=${nf14 < 0.1 ? 'off' : 'FAIL(' + nf14.toFixed(2) + ')'} (${nfNight.toFixed(2)})`);
   // 场景统计
   let meshes = 0; g.scene.traverse(o => meshes++);
   const npcOk = g.npcList.every(npc => npc.children.length > 8);

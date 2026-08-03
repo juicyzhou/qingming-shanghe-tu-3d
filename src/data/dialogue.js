@@ -32,6 +32,8 @@ const ROLE_LINES = {
   weaver: ['江南的丝，北地的布，都是上等货。', '客官要裁衣么？'],
   fish: ['今早刚打的河鱼，鲜得很！', '汴河的鱼，肥美过人。'],
   huolang: ['针头线脑，日用杂货，样样俱全。', '货郎担子，走街串巷。'],
+  diviner: ['心诚则灵，客官可要算上一卦？', '命理天机，信则有不信则无。'],
+  watcher: ['夜深了，客官留神火烛。', '梆子声起，该歇下了。'],
 };
 
 // 生成某 NPC 的对话分页
@@ -87,6 +89,16 @@ export function buildScript(npc, game) {
             game.touch
           ),
         }],
+      });
+    } else if (obj.type === 'riddle' && obj.npc === npc.npcId) {
+      // P2-4 卦摊猜谜：选对谜底推进，选错不推进
+      pages.push({
+        title: npc.name,
+        text: `“${obj.question}”`,
+        options: obj.choices.map((c, idx) => ({
+          label: c,
+          action: () => { q.riddleAnswer(qid, idx); game.hud.update(); },
+        })),
       });
     } else if (obj.type === 'buy' && obj.npc === npc.npcId) {
       if (inv.has('tea')) {

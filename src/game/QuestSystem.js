@@ -87,20 +87,39 @@ export class QuestSystem {
     return advanced;
   }
 
-  // 事件：与场景物品互动
+  // 事件：与场景物品互动（物品 id 默认等于场景物 id，特例映射历史 id）
   interact(interactableId) {
     const itemByObj = { herb: 'herb', cloth_bundle: 'cloth' };
+    const itemId = itemByObj[interactableId] || interactableId;
     let advanced = false;
     for (const [qid, st] of Object.entries(this.state)) {
       if (st.status !== 'active') continue;
       const obj = this.currentObjective(qid);
       if (obj.type !== 'interact' || obj.interactable !== interactableId) continue;
-      this.game.inventory.add(itemByObj[interactableId] || 'herb', 1);
+      this.game.inventory.add(itemId, 1);
       this._advance(qid);
       advanced = true;
       break;
     }
     return advanced;
+  }
+
+  // P2-4 猜谜：选对谜底推进，选错仅提示
+  riddleAnswer(qid, chosenIdx) {
+    const st = this.state[qid];
+    if (!st || st.status !== 'active') return false;
+    const obj = this.currentObjective(qid);
+    if (obj.type !== 'riddle') return false;
+    if (obj.answer === chosenIdx) {
+      this.game.audio?.chime();
+      this.game.hud.toast('正是此谜底！先生抚掌而笑，赠你卦资');
+      this._advance(qid);
+      this.game.hud.update(this.game);
+      return true;
+    }
+    this.game.audio?.click();
+    this.game.hud.toast('先生摇头：不对不对，再猜猜');
+    return false;
   }
 
   // 购买

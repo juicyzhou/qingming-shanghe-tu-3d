@@ -80,6 +80,61 @@ export const QUESTS = [
       { type: 'talk', npc: 'tangren', text: '回糖人摊复命' },
     ],
   },
+  // ---- P2-4 新增 5 条：12~13 条任务线 ----
+  {
+    id: 'inn_wood', title: '客栈添柴',
+    giver: 'keeper_inn', giverLine: '悦来客栈夜里客多，柴火不够烧了。',
+    reward: { coins: 35, items: [] },
+    objectives: [
+      { type: 'talk', npc: 'keeper_inn', text: '与悦来客栈白掌柜交谈' },
+      { type: 'interact', interactable: 'wood', text: '到木器摊旁取一捆木柴' },
+      { type: 'talk', npc: 'keeper_inn', text: '把木柴送回客栈', needItem: 'wood', consume: true },
+    ],
+  },
+  {
+    id: 'tavern_wine', title: '醉仙楼送酒',
+    giver: 'keeper_tavern', giverLine: '醉仙楼的一坛好酒，要送到码头货船上。',
+    reward: { coins: 45, items: [] },
+    objectives: [
+      { type: 'talk', npc: 'keeper_tavern', text: '与醉仙楼冯掌柜交谈' },
+      { type: 'interact', interactable: 'wine_jar', text: '在醉仙楼门口取一坛酒' },
+      { type: 'talk', npc: 'chuanfu', text: '把酒坛送到码头船老大处', needItem: 'wine_jar', consume: false },
+      { type: 'talk', npc: 'keeper_tavern', text: '回醉仙楼复命' },
+    ],
+  },
+  {
+    id: 'rice_deliver', title: '米铺送粮',
+    giver: 'keeper_rice', giverLine: '丰源米铺的米要送到悦来客栈。',
+    reward: { coins: 40, items: [] },
+    objectives: [
+      { type: 'talk', npc: 'keeper_rice', text: '与丰源米铺米家翁交谈' },
+      { type: 'interact', interactable: 'rice_sack', text: '在米铺门口取一袋米' },
+      { type: 'talk', npc: 'keeper_inn', text: '把米送到悦来客栈白掌柜处', needItem: 'rice_sack', consume: false },
+      { type: 'talk', npc: 'keeper_rice', text: '回米铺复命' },
+    ],
+  },
+  {
+    id: 'riddle', title: '卦摊猜谜',
+    giver: 'suanming', giverLine: '许半仙摆下谜题，说破谜底者分文不取。',
+    reward: { coins: 30, items: [] },
+    objectives: [
+      { type: 'talk', npc: 'suanming', text: '与卦摊许半仙交谈' },
+      { type: 'riddle', npc: 'suanming', question: '“人倚桥边，门开月出”，打一字。', choices: ['「汴」', '「京」', '「虹」'], answer: 0, text: '破解许半仙的谜题' },
+      { type: 'talk', npc: 'suanming', text: '与许半仙交谈领取卦资' },
+    ],
+  },
+  {
+    id: 'storyteller_script', title: '说书人新书',
+    giver: 'shuoshuren', giverLine: '说书人崔说书要写一段新书，缺一册旧手稿。',
+    reward: { coins: 55, items: [] },
+    objectives: [
+      { type: 'talk', npc: 'shuoshuren', text: '与说书人崔说书交谈' },
+      { type: 'interact', interactable: 'script', text: '到布庄沈掌柜处取一册手稿' },
+      { type: 'talk', npc: 'shuoshuren', text: '把手稿交给说书人', needItem: 'script', consume: true },
+      { type: 'talk', npc: 'shoujiang', text: '把说书人的回信送到城门守将处' },
+      { type: 'talk', npc: 'shuoshuren', text: '回说书人处复命' },
+    ],
+  },
 ];
 
 export function questById(id) {

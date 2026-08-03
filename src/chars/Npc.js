@@ -9,6 +9,7 @@ export const ROLE_LABEL = {
   monk: '僧人', boatman: '船夫', porter: '脚夫', yamen: '衙役', general: '守将',
   storyteller: '说书人', doctor: '大夫', farmer: '农夫', child: '孩童', official: '官员',
   woman: '女眷', cook: '摊主', acrobat: '卖艺人', guest: '行人', weaver: '掌柜', fish: '渔夫',
+  diviner: '卦师', watcher: '巡夜',
 };
 
 function makeLabel(name, role) {

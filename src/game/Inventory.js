@@ -5,6 +5,10 @@ export const ITEM_NAMES = {
   herb: '药草',
   cloth: '布匹',
   document: '公文',
+  wood: '木柴',
+  wine_jar: '酒坛',
+  rice_sack: '米袋',
+  script: '手稿',
 };
 
 export class Inventory {

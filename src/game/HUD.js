@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BUILDINGS, STALLS, RIVER, BRIDGE, GATE } from '../world/layout.js';
+import { LANDMARKS } from '../data/landmarks.js';
 
 const CSS = `
   #hud *{box-sizing:border-box;user-select:none;-webkit-user-select:none;}
@@ -10,6 +11,9 @@ const CSS = `
   #hud .coins{display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:18px;font-weight:bold;}
   #hud .coin-ico{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd76a,#c8912a 70%);box-shadow:0 1px 3px rgba(0,0,0,.4);position:relative;}
   #hud .coin-ico::after{content:"";position:absolute;inset:5px;border-radius:50%;border:1.5px dashed #8a5a16;}
+  #hud .clock{display:flex;flex-direction:column;align-items:center;padding:6px 12px;font-size:15px;line-height:1.5;}
+  #hud .clock .shi{font-weight:bold;color:#5a2c10;}
+  #hud .clock .phase{font-size:11px;color:#7a5f38;}
   #hud .quest-track{min-width:210px;max-width:320px;padding:10px 14px;font-size:14px;line-height:1.7;}
   #hud .quest-track h3{margin:0 0 4px;font-size:15px;color:#6e4a20;border-bottom:1px dashed #a08050;padding-bottom:3px;}
   #hud .quest-track .qitem{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -51,7 +55,12 @@ const CSS = `
   #hud .mg-marker{position:absolute;top:2px;bottom:2px;width:10px;background:#8a3a20;border-radius:2px;}
   #hud .mg-prog{margin-top:12px;font-size:16px;color:#6e4a20;}
   #hud .mg-tip{font-size:15px;color:#5a3a20;margin-top:6px;}
-  #hud .questlog{position:absolute;top:80px;left:14px;width:300px;max-height:60vh;overflow:auto;padding:14px 16px;font-size:14px;line-height:1.8;}
+  #hud .questlog{position:absolute;top:80px;left:14px;width:320px;max-height:62vh;overflow:auto;padding:14px 16px;font-size:14px;line-height:1.8;}
+  /* P2-3 打卡图鉴 */
+  #hud .lmbox{margin-top:14px;border-top:2px dashed #b09058;padding-top:10px;}
+  #hud .lmbox canvas{display:block;margin:8px auto 4px;border:2px solid #8a6a44;border-radius:6px;background:#f6ecce;}
+  #hud .lm-list{font-size:12px;line-height:2;color:#8a7a58;}
+  #hud .lm-list .got{color:#a05820;font-weight:bold;}
   /* P0-1 任务指引：屏幕边缘箭头 + 距离标签 */
   #hud .g-arrow{position:absolute;width:36px;height:36px;z-index:52;color:#a05820;font-size:28px;
     display:flex;align-items:center;justify-content:center;pointer-events:none;
@@ -130,6 +139,7 @@ export class HUD {
     h.innerHTML = `
       <div class="topbar">
         <div class="panel coins"><span class="coin-ico"></span><span id="coinval">20</span> 文</div>
+        <div class="panel clock" id="clock"><span class="shi" id="clock-shi">未时</span><span class="phase" id="clock-phase">午后</span></div>
         <div class="panel quest-track" id="questtrack"><h3>· 任务 ·</h3></div>
         <div class="minimap-wrap"><canvas class="minimap" width="170" height="170" id="minimap"></canvas></div>
       </div>
@@ -171,6 +181,8 @@ export class HUD {
 
     this.cache = {
       coin: h.querySelector('#coinval'),
+      clockShi: h.querySelector('#clock-shi'),
+      clockPhase: h.querySelector('#clock-phase'),
       questTrack: h.querySelector('#questtrack'),
       minimap: h.querySelector('#minimap'),
       prompt: h.querySelector('#prompt'),
@@ -300,7 +312,8 @@ export class HUD {
   }
 
   // ---- P1-1 成就分享卡：Canvas 生成卡片图，可保存/长按分享 ----
-  showAchievement(game) {
+  // mode: 'quests'（全任务完成）/ 'landmarks'（打卡图鉴集齐）
+  showAchievement(game, mode = 'quests') {
     const c = document.createElement('canvas');
     c.width = 640; c.height = 900;
     const ctx = c.getContext('2d');
@@ -319,10 +332,10 @@ export class HUD {
     ctx.fillText('汴京漫游', 320, 108);
     ctx.font = '26px "Kaiti SC","KaiTi",serif';
     ctx.fillStyle = '#8a3a20';
-    ctx.fillText('· 画卷集齐 ·', 320, 156);
+    ctx.fillText(mode === 'landmarks' ? '· 画卷图鉴 · 集齐' : '· 画卷集齐 ·', 320, 156);
     // 印章
     ctx.fillStyle = '#a03a28'; ctx.font = 'bold 34px serif';
-    ctx.fillText('集', 514, 172);
+    ctx.fillText(mode === 'landmarks' ? '览' : '集', 514, 172);
     ctx.strokeStyle = '#a03a28'; ctx.lineWidth = 3; ctx.strokeRect(488, 126, 54, 54);
     // 游戏实拍（缩小贴入）
     try {
@@ -335,12 +348,20 @@ export class HUD {
     // 统计
     ctx.fillStyle = '#4a3420';
     ctx.font = '26px "Kaiti SC","KaiTi",serif';
-    const rows = [
-      `完成任务  ${game.quests.doneCount()} / 8`,
-      `声望      ${game.quests.stats.reputation}`,
-      `赚得      ${game.quests.stats.coinsEarned} 文`,
-      `结识人物  ${game.npcList.length} 位`,
-    ];
+    const total = Object.keys(game.quests.state).length;
+    const rows = mode === 'landmarks'
+      ? [
+        `打卡景点  ${game.landmarksCollected.size} / ${LANDMARKS.length}`,
+        `完成任务  ${game.quests.doneCount()} / ${total}`,
+        `声望      ${game.quests.stats.reputation}`,
+        `赚得      ${game.quests.stats.coinsEarned} 文`,
+      ]
+      : [
+        `完成任务  ${game.quests.doneCount()} / ${total}`,
+        `声望      ${game.quests.stats.reputation}`,
+        `赚得      ${game.quests.stats.coinsEarned} 文`,
+        `结识人物  ${game.npcList.length} 位`,
+      ];
     let yy = 560;
     for (const r of rows) { ctx.fillText(r, 320, yy); yy += 56; }
     ctx.fillStyle = '#7a5f38';
@@ -388,12 +409,54 @@ export class HUD {
 
   update(game) {
     this.cache.coin.textContent = game.inventory.coins;
+    // P2-2 时辰时钟
+    const sc = shichenLabel(game.hour);
+    this.cache.clockShi.textContent = sc.shi;
+    this.cache.clockPhase.textContent = sc.phase;
     const list = game.quests.activeList();
     const ht = this.cache.questTrack;
     ht.innerHTML = '<h3>· 任务 ·</h3>' + (list.length === 0
       ? '<div style="color:#8a7a58;font-size:13px">尚无进行中的任务<br>靠近带 <b style="color:#a05820">?</b> 标记的人接任务</div>'
       : list.map(q => `<div class="qitem">【${q.title}】${q.text}</div>`).join(''));
     this.drawMinimap(game);
+  }
+
+  // P2-3 打卡图鉴滚动条：横向画卷 + 12 枚印章
+  drawLandmarksScroll(game) {
+    const c = document.getElementById('lm-canvas');
+    if (!c) return;
+    const g = c.getContext('2d');
+    const W = c.width, H = c.height;
+    g.clearRect(0, 0, W, H);
+    // 画卷底
+    g.fillStyle = '#f6ecce';
+    g.fillRect(0, 0, W, H);
+    g.strokeStyle = '#8a6a44'; g.lineWidth = 2;
+    g.strokeRect(2, 2, W - 4, H - 4);
+    // 每景一印章
+    const n = LANDMARKS.length;
+    const cell = (W - 16) / n;
+    LANDMARKS.forEach((lm, i) => {
+      const got = game.landmarksCollected.has(lm.id);
+      const x = 8 + i * cell + cell / 2;
+      const y = H / 2;
+      // 章体
+      g.save();
+      g.translate(x, y);
+      if (got) {
+        g.fillStyle = '#a03a28';
+        g.fillRect(-12, -12, 24, 24);
+        g.fillStyle = '#f6ecce';
+        g.font = 'bold 13px serif';
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('汴', 0, 1);
+      } else {
+        g.strokeStyle = '#c0a878';
+        g.lineWidth = 1.5;
+        g.strokeRect(-12, -12, 24, 24);
+      }
+      g.restore();
+    });
   }
 
   // ---- 对话 ----
@@ -478,8 +541,17 @@ export class HUD {
         const done = st.status === 'done';
         return `<div class="row ${done ? 'done' : ''}"><span>${def.title}</span><span>${done ? '✓' : (st.status === 'active' ? '…' : '○')}</span></div>`;
       }).join('');
-      el.innerHTML = `<h3>· 画卷成就 · 已完成 ${game.quests.doneCount()}/${Object.keys(all).length}</h3>${qrows}`;
+      const got = game.landmarksCollected.size;
+      const lmList = LANDMARKS.map(lm =>
+        `<span class="${game.landmarksCollected.has(lm.id) ? 'got' : ''}">${lm.name}${game.landmarksCollected.has(lm.id) ? '✓' : '·'}</span>`).join(' ');
+      el.innerHTML = `<h3>· 画卷成就 · 已完成 ${game.quests.doneCount()}/${Object.keys(all).length}</h3>${qrows}
+        <div class="lmbox">
+          <h3>· 打卡图鉴 · ${got}/${LANDMARKS.length}</h3>
+          <canvas id="lm-canvas" width="270" height="52"></canvas>
+          <div class="lm-list">${lmList}</div>
+        </div>`;
       el.style.display = 'block';
+      this.drawLandmarksScroll(game);
     } else {
       el.style.display = 'none';
     }
@@ -611,7 +683,27 @@ const QUEST_TITLES = {
   bridge_gifts: '桥头干粮', buy_tea: '茶肆茶叶', find_storyteller: '寻访说书人',
   herbs: '大夫的药草', boat_pole: '撑船过桥', gate_message: '城门传话',
   deliver_cloth: '码头送布', attract_customers: '糖人招客',
+  inn_wood: '客栈添柴', tavern_wine: '醉仙楼送酒', rice_deliver: '米铺送粮',
+  riddle: '卦摊猜谜', storyteller_script: '说书人新书',
 };
+
+// P2-2 时辰 → 「子丑寅卯…」+ 昼夜标注
+function shichenLabel(hour) {
+  const TABLE = [
+    [23, '子', '夜半'], [1, '丑', '鸡鸣'], [3, '寅', '平旦'], [5, '卯', '日出'],
+    [7, '辰', '食时'], [9, '巳', '隅中'], [11, '午', '日中'], [13, '未', '日昳'],
+    [15, '申', '晡时'], [17, '酉', '日入'], [19, '戌', '黄昏'], [21, '亥', '人定'],
+  ];
+  let shi = '子', seg = '夜半';
+  for (let i = 0; i < TABLE.length; i++) {
+    const [start, name, segName] = TABLE[i];
+    const next = TABLE[(i + 1) % TABLE.length][0];
+    if (hour >= start && hour < next) { shi = name; seg = segName; break; }
+    if (i === 0 && hour >= 23 && hour < 24) { shi = name; seg = segName; break; } // 子时前段
+    if (i === 0 && hour >= 0 && hour < 1) { shi = name; seg = segName; break; }   // 子时跨天
+  }
+  return { shi, phase: (hour >= 19 || hour < 5) ? '夜色' : seg };
+}
 
 function roleLabel(role) {
   const m = {
