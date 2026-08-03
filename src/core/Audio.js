@@ -154,36 +154,39 @@ export class AudioSys {
   }
 
   // ---- 环境音（P1-2）：水流 + 市井嘈杂 + 鸟鸣，天然分层 ----
+  // 注意：用粉噪（-3dB/oct）而非白噪——白噪高频能量刺耳，听感是"雪花/嘶声"
   startAmbient() {
     if (!this.ctx || this._ambientOn) return;
     if (!isFinite(this.ctx.currentTime)) return; // 同 startBgm 的防御
     this._ambientOn = true;
     const t0 = this.ctx.currentTime;
-    // 噪声缓冲（2 秒白噪声，供水流/市井/纸张复用）
-    const noise = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
-    const nd = noise.getChannelData(0);
-    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-    const loop = (filter, freq, gain, lfoHz, lfoDepth) => {
-      const src = this.ctx.createBufferSource();
-      src.buffer = noise; src.loop = true;
-      const f = this.ctx.createBiquadFilter();
-      f.type = filter; f.frequency.value = freq;
-      if (filter === 'bandpass') f.Q.value = 0.8;
-      const g = this.ctx.createGain();
-      g.gain.value = gain;
-      if (lfoHz) { // 缓慢起伏 = 水波拍岸 / 人声涌动
-        const lfo = this.ctx.createOscillator(); lfo.frequency.value = lfoHz;
-        const lg = this.ctx.createGain(); lg.gain.value = lfoDepth;
-        lfo.connect(lg); lg.connect(g.gain); lfo.start(t0);
-      }
-      src.connect(f); f.connect(g); g.connect(this.ambientGain);
-      src.start(t0);
+    const pink = this._pinkNoise(); // 柔和底噪缓冲（2 秒，循环）
+    const src = (buffer) => { const s = this.ctx.createBufferSource(); s.buffer = buffer; s.loop = true; return s; };
+    const lp = (freq, q) => { const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq; f.Q.value = q || 0.7; return f; };
+    const bp = (freq, q) => { const f = this.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q || 0.9; return f; };
+    const slowLfo = (hz, depth) => {
+      const o = this.ctx.createOscillator(); o.frequency.value = hz;
+      const g = this.ctx.createGain(); g.gain.value = depth;
+      o.connect(g); o.start(t0); return g;
     };
-    // 汴河水声：低频滤波噪声 + 缓慢起伏
-    loop('lowpass', 380, 0.16, 0.05, 0.06);
-    // 市井人声：中频带通噪声，极轻
-    loop('bandpass', 1700, 0.028, 0.11, 0.012);
-    // 鸟鸣：随机间隔的清脆短音
+
+    // 汴河水声：粉噪 → 双段低通(420→760，陡降无残留嘶声) → 缓慢起伏
+    {
+      const s = src(pink), f1 = lp(420), f2 = lp(760), g = this.ctx.createGain();
+      g.gain.value = 0.16;
+      slowLfo(0.05, 0.05).connect(g.gain); // 水波拍岸的起伏
+      s.connect(f1); f1.connect(f2); f2.connect(g); g.connect(this.ambientGain);
+      s.start(t0);
+    }
+    // 市井人声：粉噪 → 低通(900) → 带通(1200,Q2) → 极轻 —— 远处人声嗡嗡，无 1.7k 嘶声
+    {
+      const s = src(pink), f1 = lp(900), f2 = bp(1200, 2), g = this.ctx.createGain();
+      g.gain.value = 0.02;
+      slowLfo(0.11, 0.01).connect(g.gain); // 人声涌动
+      s.connect(f1); f1.connect(f2); f2.connect(g); g.connect(this.ambientGain);
+      s.start(t0);
+    }
+    // 鸟鸣：随机间隔的清脆短音（正弦，保持悦耳）
     const chirp = () => {
       if (!this.ctx || !this._ambientOn) return;
       this._chirp();
@@ -193,6 +196,26 @@ export class AudioSys {
     this._birdTimer = setTimeout(chirp, 2.5 * 1000);
     // 淡入环境音
     this.ambientGain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 3);
+  }
+
+  // 粉噪（Paul Kellet 方法）：高频按 -3dB/oct 衰减，无白噪刺耳高频
+  _pinkNoise() {
+    const len = this.ctx.sampleRate * 2;
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + w * 0.0555179;
+      b1 = 0.99332 * b1 + w * 0.0750759;
+      b2 = 0.96900 * b2 + w * 0.1538520;
+      b3 = 0.86650 * b3 + w * 0.3104856;
+      b4 = 0.55000 * b4 + w * 0.5329522;
+      b5 = -0.7616 * b5 - w * 0.0168980;
+      d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
+      b6 = w * 0.115926;
+    }
+    return buf;
   }
 
   _chirp() {
@@ -282,26 +305,25 @@ export class AudioSys {
     }
   }
 
-  // P2-5 雨声层：中高频噪声，随天气淡入/淡出
+  // P2-5 雨声层：粉噪 + 中频高通，随天气淡入/淡出（避免白噪嘶声）
   setRain(on) {
     if (!this.ctx || !isFinite(this.ctx.currentTime)) return;
     if (on && !this._rainNode) {
-      const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       const src = this.ctx.createBufferSource();
-      src.buffer = buf; src.loop = true;
-      const bp = this.ctx.createBiquadFilter();
-      bp.type = 'highpass'; bp.frequency.value = 900;
+      src.buffer = this._pinkNoise(); src.loop = true;
+      const hp = this.ctx.createBiquadFilter();
+      hp.type = 'highpass'; hp.frequency.value = 500;
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 3800;
       const g = this.ctx.createGain();
       g.gain.value = 0;
-      src.connect(bp); bp.connect(g); g.connect(this.master);
+      src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(this.master);
       src.start();
       this._rainNode = { src, g };
     }
     if (this._rainNode) {
       this._rainNode.g.gain.cancelScheduledValues(this.ctx.currentTime);
-      this._rainNode.g.gain.linearRampToValueAtTime(on ? 0.07 : 0, this.ctx.currentTime + 1.5);
+      this._rainNode.g.gain.linearRampToValueAtTime(on ? 0.05 : 0, this.ctx.currentTime + 1.5);
     }
   }
 
