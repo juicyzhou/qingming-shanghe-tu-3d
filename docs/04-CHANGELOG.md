@@ -114,7 +114,7 @@
 
 | 提交 | 内容 |
 |---|---|
-| `(待补)` | **雨雪粒子**：`render/weather.js` 新增天气系统——雨 500 条线雨丝（LineSegments）+ 雪 420 个柔白点（Points），粒子跟随玩家、按时间下落/摇摆、顶部循环；40~90s 随机换天（晴 55% / 雨 30% / 雪 15%，夜晚更易下雪），约 2.5s 平滑过渡。**水面光斑**：水面 shader 新增 `uSparkle`（太阳细碎光斑，随昼夜/晴雨强弱）与 `uRain`（雨天水色变暗、波纹加密）；雨天整体光照再暗 14%；雨声层（`AudioSys.setRain` 中高频噪声淡入淡出）。调试参数 `?weather=rain/snow/clear` 强制指定。selftest 扩至 13 任务+打卡+昼夜+三玩法+天气全过（weather=ok sparkle=ok），features/qa 全过 |
+| `dddeb0a` | **雨雪粒子**：`render/weather.js` 新增天气系统——雨 500 条线雨丝（LineSegments）+ 雪 420 个柔白点（Points），粒子跟随玩家、按时间下落/摇摆、顶部循环；40~90s 随机换天（晴 55% / 雨 30% / 雪 15%，夜晚更易下雪），约 2.5s 平滑过渡。**水面光斑**：水面 shader 新增 `uSparkle`（太阳细碎光斑，随昼夜/晴雨强弱）与 `uRain`（雨天水色变暗、波纹加密）；雨天整体光照再暗 14%；雨声层（`AudioSys.setRain` 中高频噪声淡入淡出）。调试参数 `?weather=rain/snow/clear` 强制指定。selftest 扩至 13 任务+打卡+昼夜+三玩法+天气全过（weather=ok sparkle=ok），features/qa 全过 |
 
 ## 经验教训（后续开发必读）
 
