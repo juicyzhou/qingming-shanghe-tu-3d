@@ -390,6 +390,7 @@ export class HUD {
   // ---- 对话 ----
   openDialogue(npc, game, pages, onChoose) {
     this.dialogueOpen = true;
+    if (this._audio) this._audio.flip(); // P1-4 翻页
     const d = this.cache.dialogue;
     d.style.display = 'block';
     this.cache.dName.textContent = npc.name;
@@ -404,6 +405,7 @@ export class HUD {
   }
 
   _renderPage() {
+    if (this._page > 0 && this._audio) this._audio.flip(); // P1-4 翻页
     const page = this._pages[this._page];
     const txt = this.cache.dText;
     const full = page.text;
@@ -448,6 +450,7 @@ export class HUD {
       <div class="rew" style="font-size:14px;color:#7a5f38">已完成任务 ${game.quests.stats.completed} · 声望 ${game.quests.stats.reputation}</div>
       <button class="btn" id="settle-ok">收下</button>`;
     s.style.display = 'block';
+    if (this._audio) this._audio.stamp(); // P1-4 盖章落款
     s.querySelector('#settle-ok').onclick = () => {
       s.style.display = 'none';
       // P1-1：全部任务完成 → 弹「画卷集齐」成就分享卡

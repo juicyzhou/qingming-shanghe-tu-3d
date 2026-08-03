@@ -28,8 +28,10 @@ export class Game {
 
     // ---- 场景 / 相机 ----
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#e7d8b4');
-    this.scene.fog = new THREE.Fog('#e7d8b4', 60, 210);
+    // P1-2 傍晚暖光（默认暮色，?day=1 恢复正午；与 materials.js 的 uSunDir/uSunColor 同步）
+    this.dusk = new URLSearchParams(location.search).get('day') !== '1';
+    this.scene.background = new THREE.Color(this.dusk ? '#e2cfa8' : '#e7d8b4');
+    this.scene.fog = new THREE.Fog(this.dusk ? '#e2cfa8' : '#e7d8b4', 60, 210);
     this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 500);
 
     // ---- 光照（暖色） ----
@@ -47,6 +49,7 @@ export class Game {
     this.input = new Input(this.canvas);
     this.audio = new AudioSys();
     this.hud = new HUD();
+    this.hud._audio = this.audio; // 供 HUD 播放翻页/小玩法音效
     this.touch = new TouchControls(this.input); // 触屏虚拟摇杆/按钮（非触屏为 no-op）
     this.touch.onPause = () => this.togglePause(); // 触屏"菜单"按钮
     this.world = new World(this.scene);
@@ -62,6 +65,7 @@ export class Game {
     // ---- 玩家 ----
     this.player = new Player();
     this.player.camera = this.camera;
+    this.player.onStep = (gt) => this.audio.step(gt); // P1-2 脚步随地面变化
     this.scene.add(this.player);
 
     // ---- NPC ----
@@ -101,14 +105,23 @@ export class Game {
     this._prevViewMode = 3;
     this._paused = false;             // 暂停菜单（P0-3）
     this._introActive = false;        // 开场引导进行中（P0-2）
+    // P1-3 自适应分辨率：低帧率自动降档，恢复后升回（触屏上限 2、桌面 1.5）
+    this._PIXEL_LEVELS = [1, 1.25, 1.5, 2];
+    this._maxPixelLevel = touch ? 3 : 2;
+    this._pixelLevel = this._maxPixelLevel;
+    this._frameSamples = [];
 
     this.hud.showTitle(() => this.start());
     this.hud.setPrompt('');
     addEventListener('resize', () => this._resize());
+    this._resize(); // 启动即应用竖屏 FOV（P1-3）
   }
 
   start() {
-    if (new URLSearchParams(location.search).get('noaudio') !== '1') this.audio.ensure();
+    if (new URLSearchParams(location.search).get('noaudio') !== '1') {
+      this.audio.ensure();
+      this.audio.startAmbient(); // P1-2 环境音：水流/市井/鸟鸣
+    }
     this.hud.update(this);
     this._running = true;
     this._clock.start();
@@ -158,6 +171,35 @@ export class Game {
     if (this.composer) this.composer.render();
     else this.renderer.render(this.scene, this.camera);
     this.input.endFrame();
+    this._updateAdaptive(); // P1-3 低帧率自适应降档
+  }
+
+  // P1-3 自适应像素比：平均帧耗时 >36ms（<27fps）降一档，<20ms 连续 3 窗升回（不超上限）
+  _updateAdaptive() {
+    if (this._pixelLevel === 0 && this._frameSamples.length > 90) return; // 已最低，停止采样
+    const now = performance.now();
+    if (!this._lastFrameNow) { this._lastFrameNow = now; return; }
+    this._frameSamples.push(now - this._lastFrameNow);
+    this._lastFrameNow = now;
+    if (this._frameSamples.length < 30) return;
+    const avg = this._frameSamples.reduce((a, b) => a + b, 0) / this._frameSamples.length;
+    this._frameSamples = [];
+    if (avg > 36 && this._pixelLevel > 0) {
+      this._setPixelLevel(this._pixelLevel - 1);
+    } else if (avg < 20 && this._pixelLevel < this._maxPixelLevel) {
+      this._fastCount = (this._fastCount || 0) + 1;
+      if (this._fastCount >= 3) { this._fastCount = 0; this._setPixelLevel(this._pixelLevel + 1); }
+    } else {
+      this._fastCount = 0;
+    }
+  }
+
+  _setPixelLevel(l) {
+    if (l === this._pixelLevel || l < 0 || l > this._maxPixelLevel) return;
+    this._pixelLevel = l;
+    this.renderer.setPixelRatio(this._PIXEL_LEVELS[l]);
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    if (this.composer) this.composer.setSize(window.innerWidth, window.innerHeight);
   }
 
   _debugRay() {
@@ -326,7 +368,7 @@ export class Game {
       this._prevViewMode = this.player.viewMode;
       this.player.viewMode = 1;
     }
-    this.audio?.blip();
+    this.audio?.creak(); // P1-4 开门吱呀
     this.hud.toast(`走进${int.def.name}`);
   }
 
@@ -338,7 +380,7 @@ export class Game {
     this.player.inside = null;
     this.player.viewMode = this._prevViewMode;
     this._inside = null;
-    this.audio?.blip();
+    this.audio?.creak(); // P1-4 开门吱呀
     this.hud.toast('走出店门');
   }
 
@@ -387,9 +429,12 @@ export class Game {
   }
 
   _resize() {
+    // P1-3 竖屏适配：窄画幅放大纵向视场，避免横向视野被压扁
+    const portrait = window.innerHeight > window.innerWidth;
+    this.camera.fov = portrait ? 78 : 62;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.composer.setSize(window.innerWidth, window.innerHeight);
+    if (this.composer) this.composer.setSize(window.innerWidth, window.innerHeight);
   }
 }

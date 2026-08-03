@@ -61,7 +61,7 @@ export class QuestSystem {
     this.stats.completed++;
     this.stats.reputation += 10;
     this.markDirty = true;
-    this.game.audio?.chime();
+    this.game.audio?.chime(); // 完成琶音
     this.game.hud.settle(q, this.game);
     this.game.hud.update(this.game);
   }
@@ -107,7 +107,7 @@ export class QuestSystem {
   buy(item, cost) {
     if (!this.game.inventory.pay(cost)) return false;
     this.game.inventory.add(item, 1);
-    this.game.audio?.coin();
+    this.game.audio?.deal(); // P1-4 成交音
     let advanced = false;
     for (const [qid, st] of Object.entries(this.state)) {
       if (st.status !== 'active') continue;

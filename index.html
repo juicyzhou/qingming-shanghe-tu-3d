@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>3D《清明上河图》· 汴京漫游</title>
   <meta name="description" content="以《清明上河图》为蓝本的 3D 沉浸式漫游游戏：纯程序化资源，零外部依赖，直接部署于 GitHub Pages。" />
   <style>
@@ -20,9 +20,87 @@
       height: 100%;
       display: block;
     }
+    /* P0-5 水墨风加载动画（内联，模块加载前即显示） */
+    #loading {
+      position: fixed; inset: 0; z-index: 999;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #f3e8cd, #d9c398);
+      transition: opacity .5s ease;
+    }
+    #loading .l-inner { width: min(360px, 80vw); text-align: center; color: #5a2c10; }
+    #loading .l-title { font-size: 40px; letter-spacing: 10px; margin: 0 0 6px; text-shadow: 2px 2px 0 rgba(255,250,230,.8); }
+    #loading .l-sub { font-size: 16px; letter-spacing: 4px; color: #7a4a20; margin-bottom: 26px; }
+    #loading .l-bar { height: 14px; background: rgba(90,60,20,.18); border: 2px solid #8a6a44; border-radius: 8px; overflow: hidden; }
+    #loading .l-fill {
+      height: 100%; width: 8%;
+      background: linear-gradient(90deg, #b08a4a, #d9b26a, #b08a4a);
+      background-size: 200% 100%;
+      animation: lshimmer 1.4s linear infinite;
+      transition: width .4s ease;
+    }
+    #loading .l-text { margin-top: 14px; font-size: 15px; color: #6e4a20; letter-spacing: 2px; }
+    @keyframes lshimmer { 0% { background-position: 0% 0; } 100% { background-position: -200% 0; } }
+    /* P0-4 WebGL 兼容提示（默认隐藏） */
+    #glfallback {
+      position: fixed; inset: 0; z-index: 998; display: none;
+      align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, rgba(243,232,205,.98), rgba(210,190,150,.98));
+    }
+    #glfallback .gf-inner {
+      width: min(440px, 90vw); padding: 34px 40px; text-align: center;
+      background: #f3e8cd; border: 3px solid #8a6a44; border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(70,50,20,.35);
+    }
+    #glfallback h2 { color: #8a3a20; font-size: 28px; letter-spacing: 6px; margin: 0 0 14px; }
+    #glfallback p { color: #4a3420; font-size: 16px; line-height: 1.9; margin: 0 0 14px; }
+    #glfallback ul { text-align: left; color: #5a3a20; font-size: 15px; line-height: 2.1; margin: 0 0 18px; padding-left: 20px; }
+    #glfallback button {
+      font-family: inherit; font-size: 17px; padding: 10px 32px; cursor: pointer;
+      background: #8a3a20; color: #f3e8cd; border: 2px solid #5a2008; border-radius: 8px;
+    }
+    #glfallback button:hover { background: #a04a2a; }
   </style>
+  <script>
+    // P0-5 加载进度接口（main.js 调用推进）
+    window.__loadProgress = function (pct, text) {
+      var fill = document.getElementById('l-fill');
+      var txt = document.getElementById('l-text');
+      if (fill) fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+      if (txt && text) txt.textContent = text;
+      if (pct >= 100) {
+        setTimeout(function () {
+          var l = document.getElementById('loading');
+          if (l) l.style.opacity = '0';
+        }, 260);
+        setTimeout(function () {
+          var l = document.getElementById('loading');
+          if (l) l.style.display = 'none';
+        }, 850);
+      }
+    };
+  </script>
 </head>
 <body>
+  <div id="loading">
+    <div class="l-inner">
+      <div class="l-title">汴京漫游</div>
+      <div class="l-sub">· 清明上河图 · 3D 沉浸画卷 ·</div>
+      <div class="l-bar"><div class="l-fill" id="l-fill"></div></div>
+      <div class="l-text" id="l-text">正在铺开长卷…</div>
+    </div>
+  </div>
+  <div id="glfallback">
+    <div class="gf-inner">
+      <h2>无法进入 3D 画卷</h2>
+      <p>您的设备或浏览器未能开启 <b>WebGL（3D 加速）</b>，暂时无法渲染汴京街景。</p>
+      <ul>
+        <li>更新浏览器至最新版（Chrome / Safari / Edge）</li>
+        <li>开启「硬件加速」（Chrome 设置 → 系统 → 使用硬件加速）</li>
+        <li>或换一台设备再试</li>
+      </ul>
+      <button onclick="location.reload()">重新尝试</button>
+    </div>
+  </div>
   <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
 </body>

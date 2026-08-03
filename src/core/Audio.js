@@ -32,6 +32,9 @@ export class AudioSys {
     this.sfxGain = this.ctx.createGain();
     this.sfxGain.gain.value = 0.8;
     this.sfxGain.connect(this.master);
+    this.ambientGain = this.ctx.createGain();
+    this.ambientGain.gain.value = 0.0;
+    this.ambientGain.connect(this.master);
     this.startBgm();
   }
 
@@ -78,6 +81,7 @@ export class AudioSys {
 
   startBgm() {
     if (this.bgmTimer || !this.ctx) return;
+    if (!isFinite(this.ctx.currentTime)) return; // 无音频设备的怪环境：跳过调度，避免 NaN 崩溃
     this.nextNoteTime = this.ctx.currentTime + 0.1;
     // 旋律型：宫角徵羽宫 循环（中速）
     this.melody = [0, 2, 3, 4, 2, 1, 0, 3, 4, 2, 3, 1];
@@ -126,16 +130,159 @@ export class AudioSys {
   }
 
   // ---- 音效 ----
-  step() {
+  // 脚步随地面变化（P1-2）：wood 木板 / soft 草地 / stone 石板
+  step(type) {
     if (!this.ctx || !this.enabled) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
-    osc.type = 'sine'; osc.frequency.value = 90 + Math.random() * 20;
     const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.035, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+    let freq = 100, vol = 0.035, dur = 0.08, otype = 'sine';
+    if (type === 'wood') { freq = 135; vol = 0.05; dur = 0.07; otype = 'sine'; }
+    else if (type === 'soft') { freq = 190; vol = 0.026; dur = 0.05; otype = 'triangle'; }
+    else { freq = 105 + Math.random() * 15; vol = 0.04; dur = 0.06; }
+    osc.type = otype; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     osc.connect(g); g.connect(this.sfxGain);
-    osc.start(t); osc.stop(t + 0.1);
+    osc.start(t); osc.stop(t + dur + 0.02);
+  }
+
+  // ---- 环境音（P1-2）：水流 + 市井嘈杂 + 鸟鸣，天然分层 ----
+  startAmbient() {
+    if (!this.ctx || this._ambientOn) return;
+    if (!isFinite(this.ctx.currentTime)) return; // 同 startBgm 的防御
+    this._ambientOn = true;
+    const t0 = this.ctx.currentTime;
+    // 噪声缓冲（2 秒白噪声，供水流/市井/纸张复用）
+    const noise = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
+    const nd = noise.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const loop = (filter, freq, gain, lfoHz, lfoDepth) => {
+      const src = this.ctx.createBufferSource();
+      src.buffer = noise; src.loop = true;
+      const f = this.ctx.createBiquadFilter();
+      f.type = filter; f.frequency.value = freq;
+      if (filter === 'bandpass') f.Q.value = 0.8;
+      const g = this.ctx.createGain();
+      g.gain.value = gain;
+      if (lfoHz) { // 缓慢起伏 = 水波拍岸 / 人声涌动
+        const lfo = this.ctx.createOscillator(); lfo.frequency.value = lfoHz;
+        const lg = this.ctx.createGain(); lg.gain.value = lfoDepth;
+        lfo.connect(lg); lg.connect(g.gain); lfo.start(t0);
+      }
+      src.connect(f); f.connect(g); g.connect(this.ambientGain);
+      src.start(t0);
+    };
+    // 汴河水声：低频滤波噪声 + 缓慢起伏
+    loop('lowpass', 380, 0.16, 0.05, 0.06);
+    // 市井人声：中频带通噪声，极轻
+    loop('bandpass', 1700, 0.028, 0.11, 0.012);
+    // 鸟鸣：随机间隔的清脆短音
+    const chirp = () => {
+      if (!this.ctx || !this._ambientOn) return;
+      this._chirp();
+      const next = 3 + Math.random() * 9;
+      this._birdTimer = setTimeout(chirp, next * 1000);
+    };
+    this._birdTimer = setTimeout(chirp, 2.5 * 1000);
+    // 淡入环境音
+    this.ambientGain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 3);
+  }
+
+  _chirp() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(2300, t);
+    osc.frequency.exponentialRampToValueAtTime(3600, t + 0.05);
+    osc.frequency.exponentialRampToValueAtTime(2700, t + 0.11);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.05, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+    osc.connect(g); g.connect(this.ambientGain);
+    osc.start(t); osc.stop(t + 0.16);
+  }
+
+  _noiseBurst(dur = 0.1, vol = 0.05) {
+    if (!this.ctx) return null;
+    const t = this.ctx.currentTime;
+    const buf = this.ctx.createBuffer(1, Math.ceil(this.ctx.sampleRate * dur), this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    return { src, t };
+  }
+
+  // 开门吱呀（进/出店）
+  creak() {
+    if (!this.ctx || !this.enabled) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(330, t);
+    osc.frequency.exponentialRampToValueAtTime(150, t + 0.24);
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 850;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.055, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    osc.connect(lp); lp.connect(g); g.connect(this.sfxGain);
+    osc.start(t); osc.stop(t + 0.32);
+  }
+
+  // 翻页（对话打开/换页）
+  flip() {
+    if (!this.ctx || !this.enabled) return;
+    const { src, t } = this._noiseBurst(0.13, 0.08);
+    if (!src) return;
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 2500; bp.Q.value = 1.4;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.06, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    src.connect(bp); bp.connect(g); g.connect(this.sfxGain);
+    src.start(t); src.stop(t + 0.15);
+  }
+
+  // 盖章（任务完成落款）
+  stamp() {
+    if (!this.ctx || !this.enabled) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, t);
+    osc.frequency.exponentialRampToValueAtTime(58, t + 0.09);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.16, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    osc.connect(g); g.connect(this.sfxGain);
+    osc.start(t); osc.stop(t + 0.18);
+    const { src: s2, t: t2 } = this._noiseBurst(0.1, 0.05);
+    if (s2) {
+      const hp = this.ctx.createBiquadFilter();
+      hp.type = 'highpass'; hp.frequency.value = 2200;
+      const g2 = this.ctx.createGain();
+      g2.gain.setValueAtTime(0, t2);
+      g2.gain.linearRampToValueAtTime(0.04, t2 + 0.005);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.1);
+      s2.connect(hp); hp.connect(g2); g2.connect(this.sfxGain);
+      s2.start(t2); s2.stop(t2 + 0.12);
+    }
+  }
+
+  // 成交（购买成功）
+  deal() {
+    if (!this.ctx || !this.enabled) return;
+    const t = this.ctx.currentTime;
+    this.pluck(880, t, 0.15, 0.16, this.sfxGain, 'sine');
+    this.pluck(1174, t + 0.05, 0.22, 0.13, this.sfxGain, 'sine');
   }
 
   blip() {

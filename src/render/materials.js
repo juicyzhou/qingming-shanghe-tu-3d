@@ -491,10 +491,13 @@ export const CLOTH_PALETTE = [
 //  Toon 手绘风着色器 —— 暖色量化光照 + 边缘光
 // ============================================================
 
+// P1-2 傍晚暖光：默认暮色（太阳略低、更暖、环境微提）；?day=1 恢复正午（用于 A/B 对比/审美偏好）
+const __dusk = new URLSearchParams(location.search).get('day') !== '1';
+
 export const LIGHT_UNIFORMS = {
-  uSunDir: { value: new THREE.Vector3(0.45, 0.85, 0.3).normalize() },
-  uSunColor: { value: new THREE.Color('#fff0d0').multiplyScalar(0.8) },
-  uAmbient: { value: new THREE.Color('#f5e6c8').multiplyScalar(0.5) },
+  uSunDir: { value: new THREE.Vector3(__dusk ? 0.5 : 0.45, __dusk ? 0.74 : 0.85, __dusk ? 0.34 : 0.3).normalize() },
+  uSunColor: { value: new THREE.Color(__dusk ? '#ffe8bf' : '#fff0d0').multiplyScalar(0.8) },
+  uAmbient: { value: new THREE.Color(__dusk ? '#f4dfbe' : '#f5e6c8').multiplyScalar(__dusk ? 0.53 : 0.5) },
   uRimColor: { value: new THREE.Color('#ffd9a0') },
   uRimPower: { value: 2.4 },
   uSteps: { value: 3.0 },
@@ -505,7 +508,7 @@ export const LIGHT_UNIFORMS = {
 
 // 手动雾效（避免 three 内置 fog 系统与自定义 shader 的 uniform 冲突）
 export const FOG_UNIFORMS = {
-  uFogColor: { value: new THREE.Color('#e7d8b4') },
+  uFogColor: { value: new THREE.Color(__dusk ? '#e2cfa8' : '#e7d8b4') },
   uFogNear: { value: 55 },
   uFogFar: { value: 200 },
 };

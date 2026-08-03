@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Character } from './Character.js';
 import { playerAppearance } from './appearance.js';
-import { tryMove, groundHeight } from '../world/layout.js';
+import { tryMove, groundHeight, groundType } from '../world/layout.js';
 
 const WALK = 3.2, RUN = 5.4;
 
@@ -64,7 +64,10 @@ export class Player extends Character {
       this.px = mx; this.pz = mz;
       this.setHeading(Math.atan2(dir.x, dir.z));
       this.stepAcc += dist;
-      if (this.stepAcc > 0.9) { this.stepAcc = 0; if (this.onStep) this.onStep(); }
+      if (this.stepAcc > 0.9) {
+        this.stepAcc = 0;
+        if (this.onStep) this.onStep(this.inside ? 'wood' : groundType(this.px, this.pz));
+      }
     } else {
       this.stepAcc = 0;
     }

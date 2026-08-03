@@ -21,6 +21,14 @@ export function groundHeight(x, z) {
   return 0;
 }
 
+// 脚底材质（P1-2 脚步音色）：wood 木板 / soft 草地 / stone 石板
+export function groundType(x, z) {
+  if (z >= 15.5 && z <= 21 && x >= 7 && x <= 18) return 'wood'; // 栈桥
+  if (Math.abs(x) <= BRIDGE.halfW && z >= BRIDGE.z0 && z <= BRIDGE.z1) return 'wood'; // 虹桥
+  if (z > 20 && z < 40) return 'soft'; // 河岸草地
+  return 'stone';
+}
+
 // ============================ 店铺数据 ============================
 export const BUILDINGS = [
   // 北街东侧

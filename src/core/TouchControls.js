@@ -1,7 +1,7 @@
 import { isTouchDevice } from './touch.js';
 
 const CSS = `
-  .t-joy{position:fixed;z-index:45;left:20px;bottom:26px;width:120px;height:120px;border-radius:50%;
+  .t-joy{position:fixed;z-index:45;left:20px;bottom:calc(26px + env(safe-area-inset-bottom));width:120px;height:120px;border-radius:50%;
     background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.4);pointer-events:auto;touch-action:none;}
   .t-joy-k{position:absolute;left:50%;top:50%;width:54px;height:54px;border-radius:50%;margin:-27px 0 0 -27px;
     background:rgba(255,255,255,.28);border:2px solid rgba(255,255,255,.5);transition:transform .04s;}
@@ -9,11 +9,11 @@ const CSS = `
   .t-btn{position:fixed;z-index:46;width:62px;height:62px;border-radius:50%;border:2px solid rgba(255,255,255,.5);
     background:rgba(70,45,20,.4);color:#f3e8cd;font-family:"Kaiti SC","KaiTi",serif;font-size:14px;
     display:flex;align-items:center;justify-content:center;pointer-events:auto;user-select:none;-webkit-user-select:none;
-    box-shadow:0 2px 8px rgba(0,0,0,.3);}
-  .t-e{right:22px;bottom:118px;background:rgba(140,58,32,.6);}
-  .t-v{right:22px;top:86px;}
-  .t-j{right:100px;top:86px;}
-  .t-p{right:22px;top:16px;width:52px;height:52px;font-size:13px;}
+    -webkit-tap-highlight-color:transparent;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .t-e{right:22px;bottom:calc(118px + env(safe-area-inset-bottom));background:rgba(140,58,32,.6);}
+  .t-v{right:22px;top:calc(86px + env(safe-area-inset-top));}
+  .t-j{right:100px;top:calc(86px + env(safe-area-inset-top));}
+  .t-p{right:22px;top:calc(16px + env(safe-area-inset-top));width:52px;height:52px;font-size:13px;}
   .t-mg{position:fixed;z-index:47;left:50%;bottom:22%;transform:translateX(-50%);width:180px;height:64px;
     border-radius:16px;border:2px solid #f3e8cd;background:rgba(140,58,32,.75);color:#f3e8cd;
     font-family:"Kaiti SC","KaiTi",serif;font-size:20px;letter-spacing:4px;pointer-events:auto;}

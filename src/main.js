@@ -2,8 +2,34 @@ import * as THREE from 'three';
 import { Game } from './core/Game.js';
 import { collides } from './world/layout.js';
 
+window.__loadProgress?.(25, '正在装裱画卷…');
+
+// P0-4 WebGL 兼容检测：不支持时显示友好提示页（替代白屏）
+function webglAvailable() {
+  try {
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
+  } catch { return false; }
+}
+
+function showWebGLFallback() {
+  window.__loadProgress?.(100);
+  document.getElementById('glfallback').style.display = 'flex';
+}
+
 const app = document.getElementById('app');
-window.game = new Game(app);
+if (!webglAvailable()) {
+  showWebGLFallback();
+} else {
+  try {
+    window.__loadProgress?.(50, '正在唤起汴京…');
+    window.game = new Game(app);
+    window.__loadProgress?.(100, '长卷展开，万事俱备…');
+  } catch (err) {
+    console.error('[qmsht] 初始化失败:', err);
+    showWebGLFallback();
+  }
+}
 
 // 自动启动（测试用）：?autostart=1 直接进入游戏
 const TEST_PARAMS = new URLSearchParams(location.search);
