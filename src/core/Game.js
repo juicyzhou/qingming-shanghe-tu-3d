@@ -19,7 +19,8 @@ export class Game {
     // ---- 渲染器 ----
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     const touch = isTouchDevice();
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touch ? 1 : 1.5)); // 触屏设备像素比=1
+    // 移动端像素比上限 2（原先=1 在 DPR2~3 手机上过于模糊）；桌面 1.5
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touch ? 2 : 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
     this.renderer = renderer;
