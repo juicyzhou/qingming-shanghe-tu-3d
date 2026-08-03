@@ -277,6 +277,29 @@ export class AudioSys {
     }
   }
 
+  // P2-5 雨声层：中高频噪声，随天气淡入/淡出
+  setRain(on) {
+    if (!this.ctx || !isFinite(this.ctx.currentTime)) return;
+    if (on && !this._rainNode) {
+      const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf; src.loop = true;
+      const bp = this.ctx.createBiquadFilter();
+      bp.type = 'highpass'; bp.frequency.value = 900;
+      const g = this.ctx.createGain();
+      g.gain.value = 0;
+      src.connect(bp); bp.connect(g); g.connect(this.master);
+      src.start();
+      this._rainNode = { src, g };
+    }
+    if (this._rainNode) {
+      this._rainNode.g.gain.cancelScheduledValues(this.ctx.currentTime);
+      this._rainNode.g.gain.linearRampToValueAtTime(on ? 0.07 : 0, this.ctx.currentTime + 1.5);
+    }
+  }
+
   // 成交（购买成功）
   deal() {
     if (!this.ctx || !this.enabled) return;

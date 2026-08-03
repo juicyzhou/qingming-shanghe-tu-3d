@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Game } from './core/Game.js';
 import { collides } from './world/layout.js';
 import { LANTERN_RIDDLES } from './data/minigames.js';
+import { WATER_UNIFORMS } from './render/shaders.js';
 
 // P3-3 微信内置浏览器检测（诊断/兼容分支用）
 window.__inWeChat = /MicroMessenger/i.test(navigator.userAgent);
@@ -354,6 +355,25 @@ window.__selftest = (g) => {
   g.finishRace(true);
   g.finishRace(false);
   out.push('race=' + (I.coins === c1 + 40 ? 'ok' : `FAIL(${I.coins - c1})`));
+  // 15) P2-5 天气：雨/雪/晴平滑过渡 + 水面光斑联动
+  g.weather.nextChange = 1e9; // 禁用自动换天，保证确定性
+  g.hour = 14;                // 保证白天测光斑（此前测试把时辰留在 23）
+  g.weather.set('rain');
+  for (let i = 0; i < 40; i++) g.weather.update(0.5, 14, i * 0.5); // 20s 虚拟推进
+  g._syncWeather();
+  const rainOk = g.weather.raininess > 0.9;
+  const sparkleRain = WATER_UNIFORMS.uSparkle.value; // 雨天光斑应减弱
+  g.weather.set('snow');
+  for (let i = 0; i < 40; i++) g.weather.update(0.5, 14, i * 0.5);
+  g._syncWeather();
+  const snowOk = g.weather.snowiness > 0.9;
+  g.weather.set('clear');
+  for (let i = 0; i < 60; i++) g.weather.update(0.5, 14, i * 0.5);
+  g._syncWeather();
+  const clearOk = g.weather.raininess < 0.1 && g.weather.snowiness < 0.1;
+  const sparkleDay = WATER_UNIFORMS.uSparkle.value; // 晴日正午光斑满值
+  out.push('weather=' + (rainOk && snowOk && clearOk ? 'ok' : `FAIL(${g.weather.raininess.toFixed(2)}/${g.weather.snowiness.toFixed(2)})`));
+  out.push('sparkle=' + (sparkleDay > 0.5 && sparkleRain < sparkleDay ? 'ok' : `FAIL(day=${sparkleDay.toFixed(2)} rain=${sparkleRain.toFixed(2)})`));
   // 场景统计
   let meshes = 0; g.scene.traverse(o => meshes++);
   const npcOk = g.npcList.every(npc => npc.children.length > 8);

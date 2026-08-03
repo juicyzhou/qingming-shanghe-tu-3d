@@ -10,6 +10,8 @@ import { QUESTS, questById } from '../data/quests.js';
 import { LANDMARKS } from '../data/landmarks.js';
 import { LANTERN_RIDDLES } from '../data/minigames.js';
 import { LIGHT_UNIFORMS, FOG_UNIFORMS } from '../render/materials.js';
+import { WATER_UNIFORMS } from '../render/shaders.js';
+import { Weather } from '../render/weather.js';
 import { Inventory } from '../game/Inventory.js';
 import { QuestSystem } from '../game/QuestSystem.js';
 import { HUD } from '../game/HUD.js';
@@ -137,6 +139,13 @@ export class Game {
     this.landmarksCollected = new Set();
     // P2-1 夜市灯谜：已解谜题下标
     this.lanternRiddles = new Set();
+    // P2-5 天气（雨/雪粒子 + 随机换天）
+    this.weather = new Weather(
+      () => ({ x: this.player.px, y: this.player.groundY, z: this.player.pz }),
+      this.scene
+    );
+    const wq = qp.get('weather');
+    if (wq === 'rain' || wq === 'snow' || wq === 'clear') this.weather.set(wq);
 
     this.hud.showTitle(() => this.start());
     this.hud.setPrompt('');
@@ -265,6 +274,8 @@ export class Game {
       // 暂停/引导：世界与 NPC 保持轻动画，不响应玩家输入与交互
       for (const npc of this.npcList) npc.update(dt, this.player);
       this.world.update(dt, this._t);
+      this.weather.update(dt, this.hour, this._t);
+      this._syncWeather();
       return;
     }
     if (this.input.wasPressed('KeyF')) this._debugRay();
@@ -287,6 +298,9 @@ export class Game {
       this._applyTimeLighting();
     }
     this._updateLandmarks(); // P2-3 打卡检测
+    // P2-5 天气：雨雪粒子 + 水面/光照/音效联动
+    this.weather.update(dt, this.hour, this._t);
+    this._syncWeather();
 
     this._updateInteriorTransition(); // 步行进出店铺
 
@@ -323,17 +337,27 @@ export class Game {
   }
 
   // P2-2 昼夜光照：白昼保持当前暖色画风；入夜整体微暗 + 夜空转深（建筑靠"灯笼暖光"保持可见）
+  // P2-5 雨天再整体微暗
   _applyTimeLighting() {
     const nf = this._nightFactor();
     const day = 1 - nf;
+    const rainDim = 1 - (this.weather ? this.weather.raininess : 0) * 0.14;
     LIGHT_UNIFORMS.uAmbient.value.copy(this._ambDay).lerp(this._ambNight, nf)
-      .multiplyScalar(0.53 * (0.8 + 0.2 * day));
+      .multiplyScalar(0.53 * (0.8 + 0.2 * day) * rainDim);
     LIGHT_UNIFORMS.uSunColor.value.copy(this._sunDay).lerp(this._sunNight, nf)
-      .multiplyScalar(0.8 * (0.62 + 0.38 * day));
+      .multiplyScalar(0.8 * (0.62 + 0.38 * day) * rainDim);
     const bg = this._bgDay.clone().lerp(this._bgNight, nf);
     FOG_UNIFORMS.uFogColor.value.copy(bg);
     this.scene.background.copy(bg);
     if (this.scene.fog) this.scene.fog.color.copy(bg);
+  }
+
+  // P2-5 天气联动：水面光斑/雨色 + 雨声
+  _syncWeather() {
+    const r = this.weather.raininess;
+    WATER_UNIFORMS.uRain.value = r;
+    WATER_UNIFORMS.uSparkle.value = (1 - this._nightFactor()) * (1 - 0.7 * r);
+    this.audio?.setRain(r > 0.45);
   }
 
   // P2-3 打卡：走进景点范围自动盖章；集齐弹画卷图鉴成就卡
