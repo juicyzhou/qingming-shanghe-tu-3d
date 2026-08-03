@@ -90,7 +90,7 @@
 
 | 提交 | 内容 |
 |---|---|
-| `(待补)` | **P0-4 WebGL 兼容**：启动前 `webglAvailable()` 检测 + `try/catch` 兜底 → 羊皮纸友好提示页（更新浏览器/硬件加速/换设备/重试），无 WebGL 不白屏。**P0-5 加载进度**：index.html 内联水墨风加载动画（`__loadProgress` 推进：铺卷→装裱→唤起汴京→完成淡出）。**P1-2 沉浸氛围**：环境音三层（汴河低噪+市井人声+随机鸟鸣，`startAmbient` 合成）；脚步随地面变化（`layout.groundType`：石板/木桥/草地，接入 Player.onStep，此前进脚步从未触发）；傍晚暖光（`LIGHT_UNIFORMS` 太阳略低更暖 + 雾更沉，`?day=1` 恢复正午 A/B 验证：墙体更暖、glare/gray 均为 0）。**P1-3 移动端**：竖屏 FOV 62→78；触屏按钮 safe-area 防刘海/手势条遮挡；自适应像素比（帧耗时 >36ms 降档、<20ms 升回，上限触屏 2/桌面 1.5，headless 实测正确降档）。**P1-4 音效细化**：开门吱呀/对话翻页/结算盖章/购买成交，接进店、对话、结算、购买全链路；AudioSys 增加 `isFinite(currentTime)` 防御（无音频设备环境不崩溃） |
+| `48a8ea0` | **P0-4 WebGL 兼容**：启动前 `webglAvailable()` 检测 + `try/catch` 兜底 → 羊皮纸友好提示页（更新浏览器/硬件加速/换设备/重试），无 WebGL 不白屏。**P0-5 加载进度**：index.html 内联水墨风加载动画（`__loadProgress` 推进：铺卷→装裱→唤起汴京→完成淡出）。**P1-2 沉浸氛围**：环境音三层（汴河低噪+市井人声+随机鸟鸣，`startAmbient` 合成）；脚步随地面变化（`layout.groundType`：石板/木桥/草地，接入 Player.onStep，此前进脚步从未触发）；傍晚暖光（`LIGHT_UNIFORMS` 太阳略低更暖 + 雾更沉，`?day=1` 恢复正午 A/B 验证：墙体更暖、glare/gray 均为 0）。**P1-3 移动端**：竖屏 FOV 62→78；触屏按钮 safe-area 防刘海/手势条遮挡；自适应像素比（帧耗时 >36ms 降档、<20ms 升回，上限触屏 2/桌面 1.5，headless 实测正确降档）。**P1-4 音效细化**：开门吱呀/对话翻页/结算盖章/购买成交，接进店、对话、结算、购买全链路；AudioSys 增加 `isFinite(currentTime)` 防御（无音频设备环境不崩溃） |
 
 ## 经验教训（后续开发必读）
 
