@@ -8,6 +8,7 @@ import { Npc, ROLE_LABEL } from '../chars/Npc.js';
 import { NPC_DEFS } from '../data/npcs.js';
 import { QUESTS, questById } from '../data/quests.js';
 import { LANDMARKS } from '../data/landmarks.js';
+import { LANTERN_RIDDLES } from '../data/minigames.js';
 import { LIGHT_UNIFORMS, FOG_UNIFORMS } from '../render/materials.js';
 import { Inventory } from '../game/Inventory.js';
 import { QuestSystem } from '../game/QuestSystem.js';
@@ -134,6 +135,8 @@ export class Game {
     this._bgDay = new THREE.Color('#e2cfa8'); this._bgNight = new THREE.Color('#1d2030');
     // P2-3 打卡收集
     this.landmarksCollected = new Set();
+    // P2-1 夜市灯谜：已解谜题下标
+    this.lanternRiddles = new Set();
 
     this.hud.showTitle(() => this.start());
     this.hud.setPrompt('');
@@ -388,7 +391,14 @@ export class Game {
     if (npc) {
       this.hud.setPrompt(`<b>${npc.name}</b>（${ROLE_LABEL[npc.def.role] || '行人'}）· ${act} 交谈`);
     } else if (item) {
-      this.hud.setPrompt(`<b>${item.label}</b> · ${actPick}`);
+      if (item.id === 'lantern') {
+        // P2-1 花灯：入夜才开张
+        this.hud.setPrompt(this._nightFactor() > 0.5
+          ? `<b>花灯谜</b> · ${actPick} 猜谜赢钱`
+          : `<b>花灯</b> · 入夜可来猜谜`);
+      } else {
+        this.hud.setPrompt(`<b>${item.label}</b> · ${actPick}`);
+      }
     } else {
       this.hud.setPrompt('');
     }
@@ -396,6 +406,10 @@ export class Game {
 
   tryInteract() {
     if (this.hud.dialogueOpen) { this._closeDialogue(); return; }
+    if (this.hud._minigameClose) return; // 竞速进行中
+    // P2-1 听书/猜谜面板已开 → E 关闭
+    if (this.hud.cache.story.style.display !== 'none') { this.hud.cache.story.style.display = 'none'; return; }
+    if (this.hud.cache.riddle.style.display !== 'none') { this.hud.cache.riddle.style.display = 'none'; return; }
     const npc = this._nearestNpc(2.6);
     if (npc) {
       this.audio.blip();
@@ -409,11 +423,66 @@ export class Game {
     }
     const item = this._nearestInteractable(2.3);
     if (item) {
+      // P2-1 小玩法场景物（非任务物品）
+      if (item.id === 'storybooth') { this.hud.openStory(this); return; }
+      if (item.id === 'raceboat') { this.hud.startRace(this); return; }
+      if (item.id === 'lantern') {
+        if (this._nightFactor() > 0.5) { this.hud.openLanternRiddle(this); return; }
+        this.audio?.click();
+        this.hud.toast('灯谜摊要入夜才开张');
+        return;
+      }
       const ok = this.quests.interact(item.id);
       this.audio.blip();
       this.hud.toast(ok ? `采得${item.label}，放入包袱` : `一${item.label}，似乎有人需要它`);
       this.hud.update(this);
     }
+  }
+
+  // ---- P2-1 小玩法结算逻辑（HUD 面板调用，可单测） ----
+  answerLanternRiddle(idx) {
+    const r = LANTERN_RIDDLES[idx];
+    if (!r) return false;
+    if (this.lanternRiddles.has(idx)) return false;
+    this.lanternRiddles.add(idx);
+    this.inventory.earn(25);
+    this.quests.stats.reputation += 5;
+    this.audio?.coin();
+    this.hud.toast(`灯花一爆，飘出 25 文铜钱！（${this.lanternRiddles.size}/${LANTERN_RIDDLES.length}）`);
+    if (this.lanternRiddles.size === LANTERN_RIDDLES.length) {
+      this.inventory.earn(30);
+      this.hud.toast('六盏灯谜全解，夜市无灯不亮！再得 30 文');
+    }
+    this.hud.update(this);
+    return true;
+  }
+
+  finishRace(win) {
+    if (win) {
+      this.inventory.earn(40);
+      this.quests.stats.reputation += 5;
+      this.audio?.coin();
+      this.hud.toast('赢了竞速！+40 文');
+    } else {
+      this.audio?.click();
+      this.hud.toast('只差一点，下次再来');
+    }
+    this.hud.update(this);
+  }
+
+  storyReward(type) {
+    if (type === 'tip') {
+      if (!this.inventory.pay(10)) { this.audio?.click(); this.hud.toast('囊中羞涩，且听下一段'); return false; }
+      this.quests.stats.reputation += 10;
+      this.audio?.coin();
+      this.hud.toast('打赏十文，说书人拱手道谢（声望 +10）');
+    } else {
+      this.quests.stats.reputation += 5;
+      this.audio?.blip();
+      this.hud.toast('满堂喝彩，说书人点头致意（声望 +5）');
+    }
+    this.hud.update(this);
+    return true;
   }
 
   // ---- 对话关闭（统一收尾，保证状态复位） ----

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BUILDINGS, STALLS, RIVER, BRIDGE, GATE } from '../world/layout.js';
 import { LANDMARKS } from '../data/landmarks.js';
+import { LANTERN_RIDDLES, STORIES } from '../data/minigames.js';
 
 const CSS = `
   #hud *{box-sizing:border-box;user-select:none;-webkit-user-select:none;}
@@ -96,6 +97,38 @@ const CSS = `
   #hud .achieve img{width:min(300px,72vw);border:4px solid #8a6a44;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.45);}
   #hud .achieve .tip{font-size:13px;color:#f3e8cd;text-shadow:0 1px 3px rgba(0,0,0,.7);}
   #hud .achieve .row{display:flex;gap:12px;}
+  /* P2-1 听书点唱 */
+  #hud .story{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);padding:24px 28px;text-align:center;}
+  #hud .story h2{color:#5a2c10;font-size:24px;letter-spacing:4px;margin:0 0 14px;}
+  #hud .story .s-lines{font-size:17px;line-height:2;color:#4a3420;min-height:96px;display:flex;align-items:center;justify-content:center;}
+  #hud .story .s-opts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;}
+  #hud .story .s-opts .btn{margin-top:0;padding:8px 22px;font-size:15px;}
+  #hud .story .s-titles{display:flex;flex-direction:column;gap:8px;}
+  #hud .story .s-title{pointer-events:auto;cursor:pointer;padding:12px 18px;font-size:17px;font-family:inherit;
+    background:#efe2c0;border:2px solid #a08050;border-radius:8px;color:#3a2c1a;}
+  #hud .story .s-title:hover{background:#e0cd9f;}
+  /* P2-1 夜市猜灯谜 */
+  #hud .riddle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);padding:26px 30px;text-align:center;}
+  #hud .riddle h2{color:#8a3a20;font-size:22px;letter-spacing:4px;margin:0 0 8px;}
+  #hud .riddle .r-prog{font-size:13px;color:#7a5f38;margin-bottom:12px;}
+  #hud .riddle .r-q{font-size:18px;line-height:1.9;color:#4a3420;margin-bottom:16px;min-height:54px;}
+  #hud .riddle .r-opts{display:flex;flex-direction:column;gap:8px;}
+  #hud .riddle .r-opt{pointer-events:auto;cursor:pointer;padding:11px 16px;font-size:16px;font-family:inherit;
+    background:#efe2c0;border:2px solid #a08050;border-radius:8px;color:#3a2c1a;}
+  #hud .riddle .r-opt:hover{background:#e0cd9f;}
+  /* P2-1 撑船竞速 */
+  #hud .race{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);padding:22px 26px;text-align:center;}
+  #hud .race h2{color:#5a2c10;font-size:22px;letter-spacing:4px;margin:0 0 12px;}
+  #hud .race .lane{display:flex;align-items:center;gap:10px;margin:7px 0;}
+  #hud .race .lane .lname{width:56px;font-size:14px;color:#6e4a20;flex:none;}
+  #hud .race .lane .track{position:relative;flex:1;height:26px;background:#cfe0cc;border:2px solid #6a7a5a;border-radius:6px;overflow:hidden;}
+  #hud .race .lane .boat{position:absolute;left:0;top:0;bottom:0;width:26px;background:#b8402a;border-radius:4px 4px 4px 4px;transition:left .05s;}
+  #hud .race .lane .boat.oppo{background:#4a6a8a;}
+  #hud .race .finish{position:absolute;right:-2px;top:-2px;bottom:-2px;width:3px;background:#5a2008;}
+  #hud .race .mg-prog{margin-top:10px;}
+  #hud .race .t-push{position:fixed;left:50%;bottom:22%;transform:translateX(-50%);width:170px;height:60px;
+    border-radius:16px;border:2px solid #f3e8cd;background:rgba(140,58,32,.8);color:#f3e8cd;
+    font-family:inherit;font-size:20px;letter-spacing:4px;pointer-events:auto;z-index:63;}
   #hud .questlog h3{margin:0 0 6px;color:#6e4a20;}
   #hud .questlog .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #c8b088;padding:3px 0;}
   #hud .questlog .row.done{color:#5a6e3a;text-decoration:line-through;}
@@ -155,6 +188,9 @@ export class HUD {
       </div>
       <div class="settle panel" id="settle" style="display:none"></div>
       <div class="minigame panel" id="minigame" style="display:none"></div>
+      <div class="story panel" id="story" style="display:none"></div>
+      <div class="riddle panel" id="riddle" style="display:none"></div>
+      <div class="race panel" id="race" style="display:none"></div>
       <div class="g-arrow" id="g-arrow" style="display:none">➤</div>
       <div class="g-tag" id="g-tag" style="display:none"></div>
       <div class="intro" id="intro" style="display:none"></div>
@@ -196,6 +232,9 @@ export class HUD {
       dOpts: h.querySelector('#d-opts'),
       settle: h.querySelector('#settle'),
       minigame: h.querySelector('#minigame'),
+      story: h.querySelector('#story'),
+      riddle: h.querySelector('#riddle'),
+      race: h.querySelector('#race'),
       gArrow: h.querySelector('#g-arrow'),
       gTag: h.querySelector('#g-tag'),
       intro: h.querySelector('#intro'),
@@ -509,6 +548,142 @@ export class HUD {
     this.dialogueOpen = false;
     if (this._typeTimer) clearInterval(this._typeTimer);
     this.cache.dialogue.style.display = 'none';
+  }
+
+  // ---- P2-1 听书点唱：选段 → 逐句讲 → 鼓掌/打赏 ----
+  openStory(game) {
+    const el = this.cache.story;
+    el.style.display = 'block';
+    el.innerHTML = `
+      <h2>说书棚 · 点唱</h2>
+      <div class="s-titles">
+        ${STORIES.map((s, i) => `<button class="s-title" data-i="${i}">《${s.title}》</button>`).join('')}
+      </div>`;
+    el.querySelectorAll('.s-title').forEach(b => {
+      b.onclick = () => this._playStory(game, parseInt(b.dataset.i, 10));
+    });
+  }
+
+  _playStory(game, i) {
+    const s = STORIES[i];
+    const el = this.cache.story;
+    let line = 0;
+    const render = () => {
+      const isLast = line === s.lines.length - 1;
+      el.innerHTML = `
+        <h2>《${s.title}》</h2>
+        <div class="s-lines">${s.lines[line]}</div>
+        <div class="s-opts">
+          ${isLast
+            ? '<button class="btn" id="s-tip">打赏十文</button><button class="btn ghost" id="s-applaud">鼓掌叫好</button>'
+            : '<button class="btn" id="s-next">下一句</button>'}
+          <button class="btn ghost" id="s-close">告辞</button>
+        </div>`;
+      el.querySelector('#s-close').onclick = () => { el.style.display = 'none'; };
+      if (!isLast) {
+        el.querySelector('#s-next').onclick = () => { line++; render(); };
+      } else {
+        el.querySelector('#s-tip').onclick = () => { game.storyReward('tip'); el.style.display = 'none'; };
+        el.querySelector('#s-applaud').onclick = () => { game.storyReward('applaud'); el.style.display = 'none'; };
+      }
+    };
+    render();
+  }
+
+  // ---- P2-1 夜市猜灯谜：6 题池，答对得钱，集齐全解 ----
+  openLanternRiddle(game) {
+    const el = this.cache.riddle;
+    let idx = -1;
+    for (let i = 0; i < LANTERN_RIDDLES.length; i++) {
+      if (!game.lanternRiddles.has(i)) { idx = i; break; }
+    }
+    if (idx === -1) { // 全解
+      el.innerHTML = `<h2>夜市灯谜</h2>
+        <div class="r-q">六盏灯谜尽数解破，今夜的汴京灯火通明。</div>
+        <button class="btn" id="r-close">赏灯去</button>`;
+      el.style.display = 'block';
+      el.querySelector('#r-close').onclick = () => { el.style.display = 'none'; };
+      return;
+    }
+    const r = LANTERN_RIDDLES[idx];
+    el.style.display = 'block';
+    el.innerHTML = `
+      <h2>夜市灯谜</h2>
+      <div class="r-prog">已解 ${game.lanternRiddles.size}/${LANTERN_RIDDLES.length}</div>
+      <div class="r-q">${r.q}</div>
+      <div class="r-opts">
+        ${r.choices.map((c, i) => `<button class="r-opt" data-a="${i}">${c}</button>`).join('')}
+      </div>`;
+    el.querySelectorAll('.r-opt').forEach(b => {
+      b.onclick = () => {
+        if (parseInt(b.dataset.a, 10) === r.a) {
+          game.answerLanternRiddle(idx);
+          el.style.display = 'none';
+        } else {
+          if (this._audio) this._audio.click();
+          b.style.opacity = '0.35';
+          b.style.pointerEvents = 'none';
+          this.toast('灯笼晃了晃：不对不对');
+        }
+      };
+    });
+  }
+
+  // ---- P2-1 撑船竞速：比手速，先到岸者胜 ----
+  startRace(game) {
+    const el = this.cache.race;
+    el.style.display = 'block';
+    const TOUCH = game.touch && game.touch.enabled;
+    el.innerHTML = `
+      <h2>汴河竞速</h2>
+      <div class="lane"><span class="lname">你的舟</span><div class="track"><div class="boat" id="rc-you"></div><div class="finish"></div></div></div>
+      <div class="lane"><span class="lname">王桨手</span><div class="track"><div class="boat oppo" id="rc-oppo"></div><div class="finish"></div></div></div>
+      <div class="mg-prog" id="rc-prog">${TOUCH ? '连点「推桨」' : '连按 空格'} 先到岸者胜</div>`;
+    let you = 0, oppo = 0, running = true;
+    const GOAL = 10;
+    const youEl = el.querySelector('#rc-you'), oppoEl = el.querySelector('#rc-oppo');
+    const prog = el.querySelector('#rc-prog');
+    const setPos = (boat, v) => { boat.style.left = Math.min(96, v / GOAL * 96) + '%'; };
+    let pushBtn = null;
+    const end = (win) => {
+      if (!running) return;
+      running = false;
+      clearInterval(timer);
+      removeEventListener('keydown', keyFn);
+      if (pushBtn) pushBtn.remove();
+      prog.textContent = win ? '你赢了！' : '对手先到岸…';
+      el.style.display = 'none';
+      this._minigameClose = null;
+      game.finishRace(win);
+    };
+    const push = () => {
+      if (!running) return;
+      you += 1 + Math.random() * 1.2;
+      setPos(youEl, you);
+      if (this._audio) this._audio.blip();
+      if (you >= GOAL) end(true);
+    };
+    if (TOUCH) {
+      pushBtn = document.createElement('button');
+      pushBtn.className = 't-push'; pushBtn.textContent = '推 桨';
+      pushBtn.addEventListener('click', (e) => { e.preventDefault(); push(); });
+      document.body.appendChild(pushBtn);
+    }
+    const keyFn = (e) => { if (e.code === 'Space') { e.preventDefault(); push(); } };
+    addEventListener('keydown', keyFn);
+    const timer = setInterval(() => { // 对手自动前进
+      if (!running) return;
+      oppo += 0.9 + Math.random() * 0.5;
+      setPos(oppoEl, oppo);
+      if (oppo >= GOAL) end(false);
+    }, 700);
+    this._minigameClose = () => {
+      running = false; clearInterval(timer);
+      removeEventListener('keydown', keyFn);
+      if (pushBtn) pushBtn.remove();
+      el.style.display = 'none';
+      this._minigameClose = null;
+    };
   }
 
   // ---- 结算 ----

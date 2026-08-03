@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Game } from './core/Game.js';
 import { collides } from './world/layout.js';
+import { LANTERN_RIDDLES } from './data/minigames.js';
 
 // P3-3 微信内置浏览器检测（诊断/兼容分支用）
 window.__inWeChat = /MicroMessenger/i.test(navigator.userAgent);
@@ -329,6 +330,30 @@ window.__selftest = (g) => {
   g.hour = 22; const nf22 = g._nightFactor();
   g.hour = 14; const nf14 = g._nightFactor();
   out.push(`night=${nf22 > 0.9 ? 'on' : 'FAIL(' + nf22.toFixed(2) + ')'} day=${nf14 < 0.1 ? 'off' : 'FAIL(' + nf14.toFixed(2) + ')'} (${nfNight.toFixed(2)})`);
+  // 14) P2-1 小玩法：场景物 / 灯谜昼夜门控+奖励 / 听书 / 竞速
+  const hasIt = ['lantern', 'storybooth', 'raceboat'].every(id => g.world.interactables.some(i => i.id === id));
+  g.hour = 14; const lampDay = g._nightFactor() < 0.5;
+  g.hour = 23; const lampNight = g._nightFactor() > 0.5;
+  g.lanternRiddles.clear();
+  const c0 = I.coins;
+  const ans1 = g.answerLanternRiddle(0);
+  const ansDup = g.answerLanternRiddle(0);
+  out.push('mini-it=' + (hasIt ? 'ok' : 'FAIL'));
+  out.push('lantern=' + (lampDay && lampNight && ans1 && !ansDup && I.coins === c0 + 25 ? 'ok' : `FAIL(${lampDay}/${lampNight}/${ans1}/${ansDup}/${I.coins - c0})`));
+  for (let i = 1; i < LANTERN_RIDDLES.length; i++) g.answerLanternRiddle(i);
+  out.push('lanternAll=' + (g.lanternRiddles.size === LANTERN_RIDDLES.length ? 'ok' : 'FAIL'));
+  const rep0 = g.quests.stats.reputation;
+  g.inventory.coins = 100;
+  const tipOk = g.storyReward('tip');
+  g.inventory.coins = 0;
+  const tipPoor = g.storyReward('tip');
+  const applaudOk = g.storyReward('applaud');
+  out.push('story=' + (tipOk && !tipPoor && applaudOk && g.quests.stats.reputation === rep0 + 15 ? 'ok' : `FAIL(${tipOk}/${tipPoor}/${applaudOk}/${g.quests.stats.reputation - rep0})`));
+  g.inventory.coins = 100;
+  const c1 = I.coins;
+  g.finishRace(true);
+  g.finishRace(false);
+  out.push('race=' + (I.coins === c1 + 40 ? 'ok' : `FAIL(${I.coins - c1})`));
   // 场景统计
   let meshes = 0; g.scene.traverse(o => meshes++);
   const npcOk = g.npcList.every(npc => npc.children.length > 8);

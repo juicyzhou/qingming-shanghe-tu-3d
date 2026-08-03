@@ -95,6 +95,47 @@ function buildInteractables(scene) {
   group.add(scriptG);
   items.push({ id: 'script', label: '手稿', x: -8.6, z: -52.4, group: scriptG });
 
+  // P2-1 小玩法场景物：说书棚（听书）/ 花灯（猜谜）/ 竞速舟（赛船）
+  // 说书棚醒木台（说书棚）
+  const boothG = new THREE.Group();
+  const podium = new THREE.Mesh(flat(new THREE.BoxGeometry(1.0, 0.7, 0.6)), toon({ color: '#8a6a44' }));
+  podium.position.y = 0.35;
+  boothG.add(podium);
+  const block = new THREE.Mesh(flat(new THREE.BoxGeometry(0.22, 0.1, 0.18)), toon({ color: '#5a3a20' }));
+  block.position.set(0, 0.75, 0.25);
+  boothG.add(block);
+  boothG.position.set(-26, 0, 15.2);
+  group.add(boothG);
+  items.push({ id: 'storybooth', label: '听书', x: -26, z: 15.2, group: boothG });
+
+  // 花灯（夜市猜谜，集市口）
+  const lanternG = new THREE.Group();
+  const pole = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 6)), toon({ color: '#4a3a26' }));
+  pole.position.y = 1.1;
+  lanternG.add(pole);
+  const lamp = new THREE.Mesh(flat(new THREE.SphereGeometry(0.32, 8, 6)), toon({ color: '#c8602a' }));
+  lamp.position.y = 2.2;
+  lanternG.add(lamp);
+  const string = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 4)), toon({ color: '#7a5a34' }));
+  string.position.y = 2.5;
+  lanternG.add(string);
+  lanternG.position.set(-21, 0, 4);
+  group.add(lanternG);
+  items.push({ id: 'lantern', label: '花灯', x: -21, z: 4, group: lanternG });
+
+  // 竞速舟（码头边，撑船竞速）
+  const raceG = new THREE.Group();
+  const hull = new THREE.Mesh(flat(new THREE.ConeGeometry(0.5, 1.6, 6)), toon({ color: '#b06a3a' }));
+  hull.rotation.x = Math.PI / 2;
+  hull.position.y = 0.35;
+  raceG.add(hull);
+  const flag = new THREE.Mesh(flat(new THREE.BoxGeometry(0.02, 0.5, 0.3)), toon({ color: '#d8402a' }));
+  flag.position.set(0, 0.9, 0.75);
+  raceG.add(flag);
+  raceG.position.set(15.6, 0.1, 18.2);
+  group.add(raceG);
+  items.push({ id: 'raceboat', label: '竞速', x: 15.6, z: 18.2, group: raceG });
+
   scene.add(group);
   return items;
 }
