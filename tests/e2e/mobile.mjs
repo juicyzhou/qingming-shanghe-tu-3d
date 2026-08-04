@@ -8,7 +8,8 @@ const { ev, check, click, setPos, report, send, raw } = await launch(
 );
 const G = `window.game`;
 await ev(`document.getElementById('title').style.display='none'; 1`);
-await wait(400);
+await waitFor(() => ev(`window.game && window.game._running`), 15000);
+await wait(300);
 
 const touch = async (type, xs, ys) => {
   await send('Input.dispatchTouchEvent', {
@@ -27,7 +28,7 @@ check('竖屏 FOV=78', await ev(`${G}.camera.fov === 78`), 'fov=' + await ev(`${
 // ---- 2. 交谈按钮：无目标隐藏、有目标显示 ----
 check('无目标交谈按钮隐藏', await ev(`getComputedStyle(document.querySelector('.t-e')).display === 'none'`));
 await setPos(1.5, 16.5); // 靠近王货郎
-await wait(500);
+await waitFor(() => ev(`getComputedStyle(document.querySelector('.t-e')).display === 'flex'`), 6000);
 check('有目标交谈按钮显示', await ev(`getComputedStyle(document.querySelector('.t-e')).display === 'flex'`));
 
 // ---- 3. 摇杆触控 → 移动 ----

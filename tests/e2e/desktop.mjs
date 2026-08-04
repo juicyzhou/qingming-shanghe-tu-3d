@@ -7,6 +7,7 @@ const { ev, check, click, keyDown, keyUp, setPos, report } = await launch(
 );
 
 await ev(`document.getElementById('title').style.display='none'; 1`);
+await waitFor(() => ev(`window.game && window.game._running`), 15000);
 await wait(300);
 const G = `window.game`;
 

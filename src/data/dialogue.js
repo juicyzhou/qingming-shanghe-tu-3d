@@ -101,14 +101,15 @@ export function buildScript(npc, game) {
         })),
       });
     } else if (obj.type === 'buy' && obj.npc === npc.npcId) {
-      if (inv.has('tea')) {
-        pages.push({ title: npc.name, text: '“茶已买好，趁热给茶肆送去。”', options: [{ label: '告辞' }] });
+      const itemName = ITEM_NAMES[obj.item] || obj.item;
+      if (inv.has(obj.item)) {
+        pages.push({ title: npc.name, text: `“${itemName}已备好，趁热送去。”`, options: [{ label: '告辞' }] });
       } else if (inv.coins >= obj.cost) {
         pages.push({
           title: npc.name,
-          text: '“新采的春茶，30 文一包，客官来一包？”',
+          text: `“${itemName}，${obj.cost} 文一份，客官来一份？”`,
           options: [
-            { label: `买一包（${obj.cost} 文）`, action: () => { q.buy('tea', obj.cost); game.hud.update(game); } },
+            { label: `买一份（${obj.cost} 文）`, action: () => { q.buy(obj.item, obj.cost); game.hud.update(game); } },
             { label: '太贵了' },
           ],
         });
@@ -133,10 +134,33 @@ export function buildScript(npc, game) {
     }
   }
 
-  // 4) 已完成任务的感谢
+  // 4) 百杂铺：钱掌柜的杂货摊（买画卷碎片/花灯/香火）
+  if (npc.npcId === 'keeper_general') {
+    pages.push({
+      title: npc.name,
+      text: '“本店货色齐全，客官随便看。铜钱不愁花，花了才是赚！”',
+      options: [
+        { label: `画卷碎片 · 30 文（${game.paintingPieces}/5）`, action: () => { game.shopBuy('painting'); game.hud.update(game); } },
+        { label: `花灯 · 20 文（${game.lanternsLit}/5）`, action: () => { game.shopBuy('lantern'); game.hud.update(game); } },
+        { label: '香火 · 15 文（+声望）', action: () => { game.shopBuy('incense'); game.hud.update(game); } },
+        { label: '告辞' },
+      ],
+    });
+  }
+
+  // 5) 已完成任务的感谢
   const helped = QUESTS.some(qd => qd.giver === npc.npcId && q.isDone(qd.id));
   if (helped && pages.length === 0) {
     pages.push({ title: npc.name, text: '“上次多亏客官，往后常来啊。”', options: [{ label: '告辞' }] });
+  }
+
+  // 6) 高声望彩蛋：说书人认得出你
+  if (npc.npcId === 'shuoshuren' && game.quests.stats.reputation >= 60 && pages.length === 0) {
+    pages.push({
+      title: npc.name,
+      text: '“这位客官……啊，是满城传扬的那位贵人！汴京城里，人人都念你的好。”',
+      options: [{ label: '惭愧惭愧' }],
+    });
   }
 
   // 5) 默认台词

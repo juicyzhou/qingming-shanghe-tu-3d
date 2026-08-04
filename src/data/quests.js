@@ -135,6 +135,21 @@ export const QUESTS = [
       { type: 'talk', npc: 'shuoshuren', text: '回说书人处复命' },
     ],
   },
+  // ---- 主线「进京赶考」：完成 3 个任务后由说书人解锁，走完给结局 ----
+  {
+    id: 'main_exam', title: '进京赶考',
+    giver: 'shuoshuren', giverLine: '说书人崔说书知晓你赴京赶考，愿指点进京门路。',
+    locked: true, // 前置：完成 MAIN_UNLOCK 个任务解锁（QuestSystem 处理）
+    reward: { coins: 0, items: [] },
+    objectives: [
+      { type: 'talk', npc: 'shuoshuren', text: '向说书人打听进京门路' },
+      { type: 'interact', interactable: 'script', text: '到布庄旁取一册书稿' },
+      { type: 'interact', interactable: 'permit', text: '到城门内侧领取路引' },
+      { type: 'talk', npc: 'shoujiang', text: '请守将韩威在路引上盖印', needItem: 'permit', consume: false },
+      { type: 'buy', npc: 'tea_stand', item: 'provisions', cost: 50, text: '在桥南茶摊买一包干粮作盘缠（50 文）' },
+      { type: 'talk', npc: 'chuanfu', text: '到码头登船，进京赴考' },
+    ],
+  },
 ];
 
 export function questById(id) {

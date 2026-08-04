@@ -136,8 +136,101 @@ function buildInteractables(scene) {
   group.add(raceG);
   items.push({ id: 'raceboat', label: '竞速', x: 16, z: 17, group: raceG });
 
+  // 主线路引（城门内侧，进京赶考用）
+  const permitG = new THREE.Group();
+  const pscroll = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.12, 0.12, 0.8, 8)), toon({ color: '#e8e0cc' }));
+  pscroll.rotation.x = Math.PI / 2;
+  pscroll.position.y = 0.18;
+  const pseal = new THREE.Mesh(flat(new THREE.BoxGeometry(0.18, 0.04, 0.14)), toon({ color: '#a03a28' }));
+  pseal.position.set(0, 0.4, 0.08);
+  permitG.add(pscroll);
+  permitG.add(pseal);
+  permitG.position.set(0.6, 0.1, -86.6);
+  group.add(permitG);
+  items.push({ id: 'permit', label: '路引', x: 0.6, z: -86.6, group: permitG });
+
   scene.add(group);
   return items;
+}
+
+// 世界痕迹感：任务完成后出现的可见变化（初始隐藏，由 Game 按任务进度点亮）
+function buildWorldChanges(scene) {
+  const changes = {};
+  const grp = new THREE.Group();
+  const hide = (o) => { o.visible = false; grp.add(o); };
+
+  // 客栈添柴完成 → 客栈烟囱冒烟
+  {
+    const smoke = new THREE.Group();
+    for (let i = 0; i < 4; i++) {
+      const puff = new THREE.Mesh(flat(new THREE.SphereGeometry(0.38 + i * 0.12, 6, 5)),
+        toon({ color: '#cfd6e0', transparent: true, opacity: 0.32 }));
+      puff.position.set((i - 1.5) * 0.22, 4.6 + i * 0.55, -0.2);
+      puff.scale.y = 1.5;
+      smoke.add(puff);
+    }
+    smoke.position.set(11.5, 3.6, -74.2);
+    hide(smoke);
+    changes.inn_wood = smoke;
+  }
+  // 米铺送粮完成 → 米铺门口多两袋米
+  {
+    const sacks = new THREE.Group();
+    for (let i = 0; i < 2; i++) {
+      const sack = new THREE.Mesh(flat(new THREE.SphereGeometry(0.34, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.5)),
+        toon({ color: '#c8b088' }));
+      sack.scale.y = 1.4;
+      sack.position.set(-13.2 + i * 0.6, 0.24, 9.8);
+      sacks.add(sack);
+    }
+    hide(sacks);
+    changes.rice_deliver = sacks;
+  }
+  // 醉仙楼送酒完成 → 码头多一坛酒
+  {
+    const jar = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.3, 0.22, 0.6, 8)), toon({ color: '#8a4a2a' }));
+    jar.position.set(14.6, 0.32, 20.2);
+    const lid = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.34, 0.34, 0.08, 8)), toon({ color: '#5a3a20' }));
+    lid.position.set(14.6, 0.66, 20.2);
+    const g2 = new THREE.Group();
+    g2.add(jar); g2.add(lid);
+    hide(g2);
+    changes.tavern_wine = g2;
+  }
+  // 码头送布完成 → 布庄门口多两卷布
+  {
+    const cloth = new THREE.Group();
+    for (let i = 0; i < 2; i++) {
+      const roll = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.2, 0.2, 1.0, 8)),
+        toon({ color: ['#e8e0cc', '#5d6f9e'][i] }));
+      roll.rotation.x = Math.PI / 2;
+      roll.position.set(-14.4 + i * 0.5, 0.22, -53.2);
+      cloth.add(roll);
+    }
+    hide(cloth);
+    changes.deliver_cloth = cloth;
+  }
+  // 花灯：集市 5 盏，买灯后逐盏点亮（亮=暖橙，暗=灰）
+  {
+    const lights = [];
+    for (let i = 0; i < 5; i++) {
+      const lamp = new THREE.Mesh(flat(new THREE.SphereGeometry(0.28, 8, 6)),
+        toon({ color: '#6a6258' }));
+      const pole = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.05, 0.05, 1.9, 6)), toon({ color: '#4a3a26' }));
+      pole.position.y = 0.95;
+      const g2 = new THREE.Group();
+      g2.add(pole);
+      g2.add(lamp);
+      g2.position.set(-20 + i * 2.2, 0, 2 + (i % 2));
+      lamp.userData.litColor = new THREE.Color('#ff9a4a'); // 亮灯后的暖色
+      hide(g2);
+      lights.push({ group: g2, lamp });
+    }
+    changes.lanterns = lights;
+  }
+
+  scene.add(grp);
+  return changes;
 }
 
 export class World {
@@ -150,6 +243,7 @@ export class World {
     const deco = buildDecorations(scene);
     this.boats = [deco.boatA, deco.boatB, deco.boatC];
     this.interactables = buildInteractables(scene);
+    this.worldChanges = buildWorldChanges(scene); // 世界痕迹感
   }
 
   // 水面动画 + 船身浮动

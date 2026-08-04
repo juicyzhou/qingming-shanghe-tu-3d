@@ -10,6 +10,7 @@ import { QUESTS, questById } from '../data/quests.js';
 import { LANDMARKS } from '../data/landmarks.js';
 import { LANTERN_RIDDLES } from '../data/minigames.js';
 import { LIGHT_UNIFORMS, FOG_UNIFORMS } from '../render/materials.js';
+import { reputationLevel, reputationTitle } from '../game/HUD.js';
 import { WATER_UNIFORMS } from '../render/shaders.js';
 import { Weather } from '../render/weather.js';
 import { Inventory } from '../game/Inventory.js';
@@ -145,6 +146,10 @@ export class Game {
     this.landmarksCollected = new Set();
     // P2-1 夜市灯谜：已解谜题下标
     this.lanternRiddles = new Set();
+    // 经济/收集：画卷碎片、花灯点亮、声望等级
+    this.paintingPieces = 0;
+    this.lanternsLit = 0;
+    this._repLevel = reputationLevel(this.quests.stats.reputation);
     // P2-5 天气（雨/雪粒子 + 随机换天）
     this.weather = new Weather(
       () => ({ x: this.player.px, y: this.player.groundY, z: this.player.pz }),
@@ -518,8 +523,69 @@ export class Game {
       this.audio?.blip();
       this.hud.toast('满堂喝彩，说书人点头致意（声望 +5）');
     }
+    this._checkReputationLevel();
     this.hud.update(this);
     return true;
+  }
+
+  // ---- 经济系统（百杂铺杂货摊） ----
+  shopOwned(type) {
+    return type === 'painting' ? this.paintingPieces : (type === 'lantern' ? this.lanternsLit : 0);
+  }
+
+  shopBuy(type) {
+    const prices = { painting: 30, lantern: 20, incense: 15 };
+    const cost = prices[type];
+    if (!this.inventory.pay(cost)) { this.audio?.click(); this.hud.toast('囊中羞涩，改日再来'); return false; }
+    if (type === 'painting') {
+      this.paintingPieces++;
+      this.audio?.coin();
+      this.hud.toast(`购得画卷碎片（${this.paintingPieces}/5）`);
+      if (this.paintingPieces >= 5) { this.hud.toast('珍藏画卷拼齐，汴京风物尽收卷中！'); this.hud.showAchievement(this, 'painting'); }
+    } else if (type === 'lantern') {
+      this.lanternsLit++;
+      this.audio?.coin();
+      this._applyWorldChanges();
+      this.hud.toast(`点起一盏花灯（${this.lanternsLit}/5）`);
+      if (this.lanternsLit >= 5) this.hud.toast('集市五灯齐亮，夜市灯火通明！');
+    } else { // incense：香火 → 声望
+      this.quests.stats.reputation += 10;
+      this.audio?.chime();
+      this.hud.toast('上了一炷香，声望 +10');
+      this._checkReputationLevel();
+    }
+    this.hud.update(this);
+    return true;
+  }
+
+  // 声望升级检查（跨越等级时提示称号）
+  _checkReputationLevel() {
+    const lvl = reputationLevel(this.quests.stats.reputation);
+    if (lvl > this._repLevel) {
+      this._repLevel = lvl;
+      this.audio?.chime();
+      this.hud.toast(`声望提升：${reputationTitle(this.quests.stats.reputation)}！`);
+      this.hud.update(this);
+    }
+  }
+
+  // 世界痕迹感：按任务完成/收集进度点亮场景变化
+  _applyWorldChanges() {
+    const ch = this.world && this.world.worldChanges;
+    if (!ch) return;
+    for (const [qid, obj] of Object.entries(ch)) {
+      if (qid === 'lanterns') continue;
+      obj.visible = !!this.quests.isDone(qid);
+    }
+    const lights = ch.lanterns;
+    if (lights) {
+      lights.forEach(({ group, lamp }, i) => {
+        group.visible = i < this.lanternsLit;
+        if (i < this.lanternsLit && lamp.material && lamp.material.uniforms && lamp.material.uniforms.uColor) {
+          lamp.material.uniforms.uColor.value.copy(lamp.userData.litColor);
+        }
+      });
+    }
   }
 
   // ---- 对话关闭（统一收尾，保证状态复位） ----
@@ -586,6 +652,7 @@ export class Game {
   _refreshMarks() {
     if (!this.quests.markDirty) return;
     this.quests.markDirty = false;
+    this._applyWorldChanges(); // 世界痕迹感随任务进度刷新
     for (const npc of this.npcList) npc.clearQuestMark();
     for (const [qid, st] of Object.entries(this.quests.state)) {
       const def = QUESTS.find(q => q.id === qid);

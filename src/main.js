@@ -3,6 +3,7 @@ import { Game } from './core/Game.js';
 import { collides } from './world/layout.js';
 import { LANTERN_RIDDLES } from './data/minigames.js';
 import { WATER_UNIFORMS } from './render/shaders.js';
+import { reputationLevel } from './game/HUD.js';
 
 // P3-3 微信内置浏览器检测（诊断/兼容分支用）
 window.__inWeChat = /MicroMessenger/i.test(navigator.userAgent);
@@ -398,6 +399,44 @@ window.__selftest = (g) => {
   const am = g.analytics.metrics();
   out.push('analytics=' + (am.accepted1 === 1 && am.completed1 === 1 && am.questsDone >= 1 && am.sessions === 1 && am.firstQuestRate === '100%'
     ? 'ok' : 'FAIL(' + JSON.stringify(am) + ')'));
+  // 17) 主线「进京赶考」：前置锁定 → 完成任务后解锁 → 走完给结局
+  const mq = g.quests.state.main_exam;
+  const mainUnlocked = mq && mq.status === 'available'; // 已完成 13 任务 → 应已解锁
+  Q.accept('main_exam');
+  Q.talkTo('shuoshuren');     // 说书人指点
+  Q.interact('script');       // 书稿
+  Q.interact('permit');       // 路引
+  const havePermit = I.has('permit');
+  Q.talkTo('shoujiang');      // 盖印
+  I.coins = 100;
+  Q.buy('provisions', 50);    // 盘缠
+  const haveProvisions = I.has('provisions');
+  Q.talkTo('chuanfu');        // 登船 → 结局
+  const mainDone = Q.isDone('main_exam');
+  const endingShown = g.hud.cache.ending.style.display === 'flex';
+  g.hud.cache.ending.style.display = 'none';
+  out.push('main=' + (mainUnlocked && mainDone && havePermit && haveProvisions && endingShown
+    ? 'ok' : `FAIL(u=${mainUnlocked}/d=${mainDone}/p=${havePermit}/v=${haveProvisions}/e=${endingShown})`));
+  // 18) 经济：杂货铺（画卷碎片 5 张拼齐 / 花灯点亮 2 盏且场景可见）
+  I.coins = 200;
+  for (let i = 0; i < 5; i++) g.shopBuy('painting');
+  g.shopBuy('lantern'); g.shopBuy('lantern');
+  g._applyWorldChanges();
+  const lanternVis = g.world.worldChanges.lanterns.filter(l => l.group.visible).length === 2;
+  out.push('shop=' + (g.paintingPieces === 5 && g.lanternsLit === 2 && lanternVis
+    ? 'ok' : `FAIL(p=${g.paintingPieces}/l=${g.lanternsLit}/lv=${lanternVis})`));
+  // 19) 声望分级：等级映射 + 升级提示 + HUD 称号
+  g._repLevel = 0; // 重置等级（此前已完成 13 任务升到顶级，需重置才能测升级）
+  g.quests.stats.reputation = 25; g._checkReputationLevel();
+  const lvl0 = g._repLevel === 0;
+  g.quests.stats.reputation = 35; g._checkReputationLevel();
+  const lvlUp = g._repLevel === 1 && g.hud.cache.rep.textContent.includes('小有名声');
+  out.push('rep=' + (reputationLevel(0) === 0 && reputationLevel(999) === 3 && lvl0 && lvlUp
+    ? 'ok' : `FAIL(${reputationLevel(0)}/${reputationLevel(999)}/${lvl0}/${lvlUp})`));
+  // 20) 世界痕迹：完成 inn_wood 后客栈冒烟可见
+  g._applyWorldChanges();
+  const smokeVis = g.world.worldChanges.inn_wood.visible === Q.isDone('inn_wood');
+  out.push('world=' + (smokeVis ? 'ok' : 'FAIL'));
   // 场景统计
   let meshes = 0; g.scene.traverse(o => meshes++);
   const npcOk = g.npcList.every(npc => npc.children.length > 8);

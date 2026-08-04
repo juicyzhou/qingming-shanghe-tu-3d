@@ -15,6 +15,9 @@ const CSS = `
   #hud .clock{display:flex;flex-direction:column;align-items:center;padding:6px 12px;font-size:15px;line-height:1.5;}
   #hud .clock .shi{font-weight:bold;color:#5a2c10;}
   #hud .clock .phase{font-size:11px;color:#7a5f38;}
+  #hud .rep{display:flex;flex-direction:column;align-items:center;padding:6px 12px;font-size:14px;line-height:1.5;}
+  #hud .rep .t{font-weight:bold;color:#8a3a20;}
+  #hud .rep .l{font-size:11px;color:#7a5f38;}
   #hud .quest-track{min-width:210px;max-width:320px;padding:10px 14px;font-size:14px;line-height:1.7;}
   #hud .quest-track h3{margin:0 0 4px;font-size:15px;color:#6e4a20;border-bottom:1px dashed #a08050;padding-bottom:3px;}
   #hud .quest-track .qitem{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -137,6 +140,15 @@ const CSS = `
   #hud .analytics td{padding:2px 0;border-bottom:1px dashed #c8b088;}
   #hud .analytics td:last-child{text-align:right;color:#8a3a20;font-weight:bold;}
   #hud .analytics .row{display:flex;gap:10px;justify-content:center;margin-top:14px;}
+  /* 主线结局 */
+  #hud .ending{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    z-index:63;background:radial-gradient(ellipse at 50% 45%,rgba(240,228,200,.98),rgba(200,178,140,.99));pointer-events:auto;}
+  #hud .ending .ending-panel{width:min(520px,92vw);padding:34px 38px;text-align:center;}
+  #hud .ending h2{color:#8a3a20;font-size:34px;letter-spacing:10px;margin:0 0 18px;}
+  #hud .ending .e-text{font-size:18px;line-height:2.2;color:#4a3420;text-align:left;}
+  #hud .ending .e-text b{color:#a03a28;font-size:22px;letter-spacing:4px;}
+  #hud .ending .e-stats{margin-top:20px;font-size:15px;color:#7a5f38;line-height:1.9;border-top:2px dashed #b09058;padding-top:12px;}
+  #hud .ending .row{display:flex;gap:12px;justify-content:center;margin-top:18px;}
   #hud .questlog h3{margin:0 0 6px;color:#6e4a20;}
   #hud .questlog .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #c8b088;padding:3px 0;}
   #hud .questlog .row.done{color:#5a6e3a;text-decoration:line-through;}
@@ -180,6 +192,7 @@ export class HUD {
     h.innerHTML = `
       <div class="topbar">
         <div class="panel coins"><span class="coin-ico"></span><span id="coinval">20</span> 文</div>
+        <div class="panel rep" id="rep"><span class="t">白衣书生</span><span class="l">声望</span></div>
         <div class="panel clock" id="clock"><span class="shi" id="clock-shi">未时</span><span class="phase" id="clock-phase">午后</span></div>
         <div class="panel quest-track" id="questtrack"><h3>· 任务 ·</h3></div>
         <div class="minimap-wrap"><canvas class="minimap" width="170" height="170" id="minimap"></canvas></div>
@@ -214,6 +227,7 @@ export class HUD {
       </div>
       <div class="achieve" id="achieve" style="display:none"></div>
       <div class="analytics" id="analytics" style="display:none"></div>
+      <div class="ending" id="ending" style="display:none"></div>
       <div class="title" id="title">
         <h1>汴京漫游</h1>
         <div class="sub">· 清明上河图 · 3D 沉浸画卷 ·</div>
@@ -226,6 +240,7 @@ export class HUD {
 
     this.cache = {
       coin: h.querySelector('#coinval'),
+      rep: h.querySelector('#rep'),
       clockShi: h.querySelector('#clock-shi'),
       clockPhase: h.querySelector('#clock-phase'),
       questTrack: h.querySelector('#questtrack'),
@@ -250,6 +265,7 @@ export class HUD {
       pausemenu: h.querySelector('#pausemenu'),
       achieve: h.querySelector('#achieve'),
       analytics: h.querySelector('#analytics'),
+      ending: h.querySelector('#ending'),
       title: h.querySelector('#title'),
     };
     this.dialogueOpen = false;
@@ -397,8 +413,36 @@ export class HUD {
     };
   }
 
+  // ---- 主线结局：进京赶考完成 ----
+  showEnding(game) {
+    const el = this.cache.ending;
+    el.innerHTML = `
+      <div class="panel ending-panel">
+        <h2>金榜题名</h2>
+        <div class="e-text">
+          你备好书稿、路引与盘缠，在汴河口登上了东行的客船。<br>
+          回望虹桥渐远，汴河的灯影碎成一片金光……<br><br>
+          三月之后，春闱放榜。你拨开人潮，抬头去看——<br>
+          <b>「汴京漫游 · 金榜题名」</b>
+        </div>
+        <div class="e-stats">
+          完成任务 ${game.quests.stats.completed}/${Object.keys(game.quests.state).length}
+          · 打卡 ${game.landmarksCollected.size}/12
+          · 声望 ${reputationTitle(game.quests.stats.reputation)}
+          · 余钱 ${game.inventory.coins} 文
+        </div>
+        <div class="row">
+          <button class="btn" id="e-share">分享这一刻</button>
+          <button class="btn ghost" id="e-stay">再游汴京</button>
+        </div>
+      </div>`;
+    el.style.display = 'flex';
+    el.querySelector('#e-stay').onclick = () => { el.style.display = 'none'; };
+    el.querySelector('#e-share').onclick = () => this.showAchievement(game, 'quests');
+  }
+
   // ---- P1-1 成就分享卡：Canvas 生成卡片图，可保存/长按分享 ----
-  // mode: 'quests'（全任务完成）/ 'landmarks'（打卡图鉴集齐）
+  // mode: 'quests'（全任务完成）/ 'landmarks'（打卡图鉴集齐）/ 'painting'（珍藏画卷）
   showAchievement(game, mode = 'quests') {
     const c = document.createElement('canvas');
     c.width = 640; c.height = 900;
@@ -418,10 +462,13 @@ export class HUD {
     ctx.fillText('汴京漫游', 320, 108);
     ctx.font = '26px "Kaiti SC","KaiTi",serif';
     ctx.fillStyle = '#8a3a20';
-    ctx.fillText(mode === 'landmarks' ? '· 画卷图鉴 · 集齐' : '· 画卷集齐 ·', 320, 156);
+    ctx.fillText(
+      mode === 'landmarks' ? '· 画卷图鉴 · 集齐'
+        : (mode === 'painting' ? '· 珍藏画卷 · 集齐' : '· 画卷集齐 ·'),
+      320, 156);
     // 印章
     ctx.fillStyle = '#a03a28'; ctx.font = 'bold 34px serif';
-    ctx.fillText(mode === 'landmarks' ? '览' : '集', 514, 172);
+    ctx.fillText(mode === 'landmarks' ? '览' : (mode === 'painting' ? '藏' : '集'), 514, 172);
     ctx.strokeStyle = '#a03a28'; ctx.lineWidth = 3; ctx.strokeRect(488, 126, 54, 54);
     // 游戏实拍（缩小贴入）
     try {
@@ -442,12 +489,19 @@ export class HUD {
         `声望      ${game.quests.stats.reputation}`,
         `赚得      ${game.quests.stats.coinsEarned} 文`,
       ]
-      : [
-        `完成任务  ${game.quests.doneCount()} / ${total}`,
-        `声望      ${game.quests.stats.reputation}`,
-        `赚得      ${game.quests.stats.coinsEarned} 文`,
-        `结识人物  ${game.npcList.length} 位`,
-      ];
+      : mode === 'painting'
+        ? [
+          `珍藏画卷  ${game.paintingPieces} / 5`,
+          `完成任务  ${game.quests.doneCount()} / ${total}`,
+          `打卡景点  ${game.landmarksCollected.size} / ${LANDMARKS.length}`,
+          `声望      ${game.quests.stats.reputation}`,
+        ]
+        : [
+          `完成任务  ${game.quests.doneCount()} / ${total}`,
+          `声望      ${game.quests.stats.reputation}`,
+          `赚得      ${game.quests.stats.coinsEarned} 文`,
+          `结识人物  ${game.npcList.length} 位`,
+        ];
     let yy = 560;
     for (const r of rows) { ctx.fillText(r, 320, yy); yy += 56; }
     ctx.fillStyle = '#7a5f38';
@@ -499,6 +553,8 @@ export class HUD {
     const sc = shichenLabel(game.hour);
     this.cache.clockShi.textContent = sc.shi;
     this.cache.clockPhase.textContent = sc.phase;
+    // 声望称号
+    this.cache.rep.querySelector('.t').textContent = reputationTitle(game.quests.stats.reputation);
     const list = game.quests.activeList();
     const ht = this.cache.questTrack;
     ht.innerHTML = '<h3>· 任务 ·</h3>' + (list.length === 0
@@ -907,7 +963,19 @@ const QUEST_TITLES = {
   deliver_cloth: '码头送布', attract_customers: '糖人招客',
   inn_wood: '客栈添柴', tavern_wine: '醉仙楼送酒', rice_deliver: '米铺送粮',
   riddle: '卦摊猜谜', storyteller_script: '说书人新书',
+  main_exam: '进京赶考',
 };
+
+// 声望等级与称号（供 HUD/Game 共用）
+export function reputationLevel(rep) {
+  if (rep >= 100) return 3;
+  if (rep >= 60) return 2;
+  if (rep >= 30) return 1;
+  return 0;
+}
+export function reputationTitle(rep) {
+  return ['白衣书生', '小有名声', '汴京熟客', '满城传扬'][reputationLevel(rep)];
+}
 
 // P3-4 毫秒 → 「X分Y秒」
 function fmtDuration(ms) {

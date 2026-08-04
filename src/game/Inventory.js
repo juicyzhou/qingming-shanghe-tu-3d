@@ -9,6 +9,8 @@ export const ITEM_NAMES = {
   wine_jar: '酒坛',
   rice_sack: '米袋',
   script: '手稿',
+  permit: '路引',
+  provisions: '干粮',
 };
 
 export class Inventory {

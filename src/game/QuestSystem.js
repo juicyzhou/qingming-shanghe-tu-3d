@@ -1,10 +1,14 @@
 import { QUESTS, questById } from '../data/quests.js';
 
+export const MAIN_UNLOCK = 3; // 完成 N 个任务后解锁主线「进京赶考」
+
 export class QuestSystem {
   constructor(game) {
     this.game = game;
     this.state = {};
-    for (const q of QUESTS) this.state[q.id] = { status: 'available', objectiveIndex: 0, count: 0 };
+    for (const q of QUESTS) {
+      this.state[q.id] = { status: q.locked ? 'locked' : 'available', objectiveIndex: 0, count: 0 };
+    }
     this.stats = { completed: 0, coinsEarned: 0, reputation: 0 };
     this.markDirty = true;
   }
@@ -64,8 +68,20 @@ export class QuestSystem {
     this.markDirty = true;
     this.game.analytics?.inc('questsDone'); // P3-4
     this.game.analytics?.markFirstComplete(); // P3-4 首任务完成
+    this.game._checkReputationLevel(); // 声望可能跨级
     this.game.audio?.chime(); // 完成琶音
-    this.game.hud.settle(q, this.game);
+    // 主线「进京赶考」：完成 N 个任务后解锁，由说书人领路
+    const mq = this.state.main_exam;
+    if (id !== 'main_exam' && mq && mq.status === 'locked' && this.stats.completed >= MAIN_UNLOCK) {
+      mq.status = 'available';
+      this.game.hud.toast('说书人崔说书唤你——似有进京要事相商');
+      this.game.audio?.blip();
+    }
+    if (id === 'main_exam') {
+      this.game.hud.showEnding(this.game); // 结局面板（替代普通结算）
+    } else {
+      this.game.hud.settle(q, this.game);
+    }
     this.game.hud.update(this.game);
   }
 
