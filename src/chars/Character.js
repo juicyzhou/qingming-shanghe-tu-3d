@@ -237,13 +237,14 @@ export class Character extends THREE.Group {
       band.position.y = headR * 0.16;
       this.headGroup.add(band);
     } else if (hat === 'dongpo') {
-      // 东坡巾：坐于头顶（不沉入头内），窄而高，微斜
-      const cap = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.10, H * 0.11, headR * 1.10, 2, H * 0.026), darkMat);
-      cap.position.y = headR + H * 0.055;
-      cap.rotation.z = 0.05;   // 微斜更自然
+      // 方巾帽（参考宁采臣）：软帽罩住头顶至发际线，非顶戴在尖顶
+      const cap = new THREE.Mesh(new RoundedBoxGeometry(headR * 2.2, headR * 1.35, headR * 2.2, 2, headR * 0.35), darkMat);
+      cap.position.y = headR * 0.78;      // 底缘压到发际线，覆盖头冠
+      cap.rotation.z = 0.02;
       this.headGroup.add(cap);
-      const band = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.16, H * 0.022, headR * 1.16, 2, H * 0.01), toon({ color: 0x3a3226 }));
-      band.position.y = headR;
+      // 额带（帽底缘）
+      const band = new THREE.Mesh(new RoundedBoxGeometry(headR * 2.3, H * 0.022, headR * 2.3, 2, H * 0.01), toon({ color: 0x3a3226 }));
+      band.position.y = headR * 0.10;
       this.headGroup.add(band);
     } else if (hat === 'jin') {
       // 布巾：裹头圆筒
