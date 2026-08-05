@@ -441,9 +441,9 @@ window.__selftest = (g) => {
   g._applyWorldChanges();
   const smokeVis = g.world.worldChanges.inn_wood.visible === Q.isDone('inn_wood');
   out.push('world=' + (smokeVis ? 'ok' : 'FAIL'));
-  // 场景统计
+  // 场景统计（汉服结构：袍服并入 body 组后，NPC 顶层子节点 8 个：body/双髋/颈/头/双肩/名牌）
   let meshes = 0; g.scene.traverse(o => meshes++);
-  const npcOk = g.npcList.every(npc => npc.children.length > 8);
+  const npcOk = g.npcList.every(npc => npc.children.length > 6);
   const npcGrounded = g.npcList.slice(0, 5).every(npc => npc.position.y > -0.5 && npc.position.y < 7.2);
   out.push(`STATS npcs=${g.npcList.length} playerChildren=${g.player.children.length} meshes=${meshes} npcOk=${npcOk} grounded=${npcGrounded}`);
   // 步行进出店（footprint 检测）
