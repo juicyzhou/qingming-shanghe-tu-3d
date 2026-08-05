@@ -62,8 +62,8 @@ export class Character extends THREE.Group {
         new THREE.Vector2(H * 0.165 * g, H * 0.16),  // 下摆（裙腰处）
       ], 16), clothMat);
       this.body.add(jacket);
-      // 腰带（系于襦下摆 / 裙腰）
-      const sash = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.17 * g, H * 0.17 * g, H * 0.04, 16), trimMat);
+      // 腰带（空心环，只外圈一圈）
+      const sash = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.17 * g, H * 0.17 * g, H * 0.035, 16, 1, true), trimMat);
       sash.position.y = H * 0.15;
       this.body.add(sash);
     } else {
@@ -75,8 +75,8 @@ export class Character extends THREE.Group {
         new THREE.Vector2(H * 0.175 * g, -H * 0.38), // 摆（微展，行走飘动）
       ], 16), clothMat);
       this.body.add(robe);
-      // 腰带（束腰显身段）
-      const sash = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.142 * g, H * 0.142 * g, H * 0.05, 16), trimMat);
+      // 腰带（空心环，只外圈一圈，非实心）
+      const sash = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.142 * g, H * 0.142 * g, H * 0.04, 16, 1, true), trimMat);
       sash.position.y = H * 0.10;
       this.body.add(sash);
     }
@@ -114,8 +114,8 @@ export class Character extends THREE.Group {
     // ---- 头（圆球） + 脖子 ----
     this.headGroup = new THREE.Group();
     this.headGroup.position.y = headCenter;
-    // 胶囊头：圆柱中段 + 圆润半球顶 —— 长而不尖（卵形缩放会拉出尖顶）
-    const head = new THREE.Mesh(new THREE.CapsuleGeometry(headR, headR * 0.28, 6, 16), toon({ map: this.app.faceTex }));
+    // 胶囊头：圆柱中段 + 圆润半球顶 —— 长而不尖，眼睛上方加长（更长的中段）
+    const head = new THREE.Mesh(new THREE.CapsuleGeometry(headR, headR * 0.46, 6, 16), toon({ map: this.app.faceTex }));
     // 胶囊 UV 与球体不同（正脸在 u=0 而非 0.25）→ 偏移 0.25，使脸贴图正脸带对准 +Z
     const hUv = head.geometry.attributes.uv;
     for (let i = 0; i < hUv.count; i++) hUv.setX(i, (hUv.getX(i) + 0.25) % 1);
@@ -191,78 +191,83 @@ export class Character extends THREE.Group {
       }
     } else {
       // 发帽（覆盖胶囊头顶至发际线）
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.08, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.15, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
       cap.position.y = headR * 0.10;
       this.headGroup.add(cap);
 
       if (hair === 'topknot') {            // 男子束发（插簪）
-        bun(0, headR * 0.78, H * 0.045);
+        bun(0, headR * 0.92, H * 0.045);
         if (this.app.crown && hat === 'none') {
           // 束发玉冠（金环束发 + 顶珠）——仅无帽时
           const ring = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.058, H * 0.058, H * 0.038, 12), gold);
-          ring.position.y = headR * 0.58;
+          ring.position.y = headR * 0.72;
           this.headGroup.add(ring);
           const bead = new THREE.Mesh(new THREE.SphereGeometry(H * 0.015, 6, 5), gold);
-          bead.position.y = headR * 0.88;
+          bead.position.y = headR * 1.02;
           this.headGroup.add(bead);
         } else {
-          pin(0, headR * 0.78);
+          pin(0, headR * 0.92);
         }
       } else if (hair === 'gaoji') {       // 女子高髻（竖立 + 簪花）
         const gaoji = new THREE.Mesh(new THREE.SphereGeometry(H * 0.055, 12, 10), hairMat);
         gaoji.scale.y = 1.7;
-        gaoji.position.y = headR * 0.95;
+        gaoji.position.y = headR * 1.1;
         this.headGroup.add(gaoji);
-        flower(headR * 0.3, headR * 1.3);
-        flower(-headR * 0.28, headR * 0.6);
+        flower(headR * 0.3, headR * 1.45);
+        flower(-headR * 0.28, headR * 0.75);
       } else if (hair === 'double') {      // 女子双髻（+簪花）
-        bun(-headR * 0.72, headR * 0.8, H * 0.048);
-        bun(headR * 0.72, headR * 0.8, H * 0.048);
-        flower(-headR * 0.72, headR * 1.1);
-        flower(headR * 0.72, headR * 1.1);
+        bun(-headR * 0.72, headR * 0.95, H * 0.048);
+        bun(headR * 0.72, headR * 0.95, H * 0.048);
+        flower(-headR * 0.72, headR * 1.25);
+        flower(headR * 0.72, headR * 1.25);
       } else if (hair === 'zongjiao') {    // 孩童总角（两侧小揪）
-        bun(-headR * 0.8, headR * 0.95, H * 0.038);
-        bun(headR * 0.8, headR * 0.95, H * 0.038);
+        bun(-headR * 0.8, headR * 1.05, H * 0.038);
+        bun(headR * 0.8, headR * 1.05, H * 0.038);
       }
     }
 
     // ---- 帽（宋制） ----
     const darkMat = toon({ color: 0x1c1814 });
+    // 罩头式半胶囊壳（统一覆盖头冠至发际线，非顶戴）
+    const shellCap = (r, mat) => {
+      const s = new THREE.Mesh(new THREE.CapsuleGeometry(headR * r, headR * 0.45, 4, 14, 1, 0, Math.PI * 2, 0, Math.PI / 2), mat);
+      s.position.y = headR * 0.10;
+      this.headGroup.add(s);
+      return s;
+    };
     if (hat === 'guan') {
-      // 乌纱帽：贴合圆帽 + 细金沿（官/将/衙），去夸张翅膀
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.98, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), darkMat);
-      cap.position.y = headR * 0.34;
-      this.headGroup.add(cap);
-      const band = new THREE.Mesh(flat(new THREE.CylinderGeometry(headR * 1.0, headR * 1.0, H * 0.02, 14)), gold);
-      band.position.y = headR * 0.16;
+      // 乌纱帽：罩头圆帽 + 细金沿（官/将/衙）
+      shellCap(1.18, darkMat);
+      const band = new THREE.Mesh(flat(new THREE.CylinderGeometry(headR * 1.2, headR * 1.2, H * 0.02, 14)), gold);
+      band.position.y = headR * 0.12;
       this.headGroup.add(band);
     } else if (hat === 'dongpo') {
-      // 方巾帽（参考宁采臣）：软帽罩住头顶至发际线，非顶戴在尖顶
-      const cap = new THREE.Mesh(new RoundedBoxGeometry(headR * 2.2, headR * 1.35, headR * 2.2, 2, headR * 0.35), darkMat);
-      cap.position.y = headR * 0.78;      // 底缘压到发际线，覆盖头冠
-      cap.rotation.z = 0.02;
+      // 方巾帽（参考宁采臣）：上窄下宽的锥形软帽，罩住头顶至发际线
+      const cap = new THREE.Mesh(new THREE.LatheGeometry([
+        new THREE.Vector2(headR * 1.22, headR * 0.10),  // 底（发际线，最宽）
+        new THREE.Vector2(headR * 1.0, headR * 0.80),   // 中段
+        new THREE.Vector2(headR * 0.72, headR * 1.45),  // 顶（最窄）
+      ], 16), darkMat);
       this.headGroup.add(cap);
       // 额带（帽底缘）
-      const band = new THREE.Mesh(new RoundedBoxGeometry(headR * 2.3, H * 0.022, headR * 2.3, 2, H * 0.01), toon({ color: 0x3a3226 }));
+      const band = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.28, H * 0.022, headR * 1.28, 2, H * 0.01), toon({ color: 0x3a3226 }));
       band.position.y = headR * 0.10;
       this.headGroup.add(band);
     } else if (hat === 'jin') {
-      // 布巾：裹头圆筒
-      const wrap = new THREE.Mesh(new THREE.CylinderGeometry(headR * 1.05, headR * 0.98, H * 0.12, 12), toon({ color: this.app.cloth }));
-      wrap.position.y = headR * 0.28;
-      this.headGroup.add(wrap);
+      // 布巾：罩头软帽（市井百姓）
+      shellCap(1.18, toon({ color: this.app.cloth }));
     } else if (hat === 'straw') {
-      // 斗笠：锥顶 + 宽沿
+      // 斗笠：锥顶 + 宽沿（坐于发际线）
       const cone = new THREE.Mesh(flat(new THREE.ConeGeometry(headR * 1.5, H * 0.13, 12)), toon({ color: 0xc9b478 }));
-      cone.position.y = headR * 0.36;
+      cone.position.y = headR * 0.18;
       this.headGroup.add(cone);
       const brim = new THREE.Mesh(flat(new THREE.CylinderGeometry(headR * 2.4, headR * 2.4, H * 0.018, 16)), toon({ color: 0xd9c47f }));
-      brim.position.y = headR * 0.30;
+      brim.position.y = headR * 0.15;
       this.headGroup.add(brim);
     } else if (hat === 'guanyin') {
-      // 包髻（厨娘/织女头巾）
-      const wrap = new THREE.Mesh(new THREE.CylinderGeometry(headR * 1.06, headR * 0.96, H * 0.14, 12), toon({ color: 0xcaa24a }));
-      wrap.position.y = headR * 0.34;
+      // 包髻（厨娘/织女头巾）：罩头上窄下宽，留出高髻
+      const wrap = new THREE.Mesh(new THREE.CylinderGeometry(headR * 1.05, headR * 1.2, headR * 0.7, 12), toon({ color: 0xcaa24a }));
+      wrap.position.y = headR * 0.5;
       this.headGroup.add(wrap);
     }
   }
