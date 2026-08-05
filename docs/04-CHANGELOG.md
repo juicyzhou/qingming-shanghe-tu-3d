@@ -208,7 +208,7 @@
 
 | 提交 | 内容 |
 |---|---|
-| `(待补)` | **云（修"石墩子"）**：水平平面云 → **billboard 积云**（扁平底+顶部半球凸起，始终面向相机，不再像石板）。**太阳**：放大到 scale 40 + 亮白核心+暖日冕。**阳光 + 阴影（核心）**：toon 着色器加入**实时阴影**——`DirectionalLight` 生成 shadow map（桌面 2048/触屏 1024，PCF/PCFSoft），着色器采样 `uShadowMatrix/uShadowMap/uHasShadow`，阴影中保留 55% 太阳光（柔和不压黑）。**关键修复**：①three r170 的 `light.shadow.matrix` 已含 0.5 偏移（直接映射 [0,1] UV），着色器勿再乘 0.5，否则 UV 出界无阴影；②`uShadowMatrix` 初始化恒为有效 Matrix4，避免 `nocycle` 测试模式 null 上传崩溃。实测：默认视角 22% 暗部（真阴影）、3776 蓝像素、阴影 on/off 有 808 像素差异（确为真投影）。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
+| `e0f5441` | **云（修"石墩子"）**：水平平面云 → **billboard 积云**（扁平底+顶部半球凸起，始终面向相机，不再像石板）。**太阳**：放大到 scale 40 + 亮白核心+暖日冕。**阳光 + 阴影（核心）**：toon 着色器加入**实时阴影**——`DirectionalLight` 生成 shadow map（桌面 2048/触屏 1024，PCF/PCFSoft），着色器采样 `uShadowMatrix/uShadowMap/uHasShadow`，阴影中保留 55% 太阳光（柔和不压黑）。**关键修复**：①three r170 的 `light.shadow.matrix` 已含 0.5 偏移（直接映射 [0,1] UV），着色器勿再乘 0.5，否则 UV 出界无阴影；②`uShadowMatrix` 初始化恒为有效 Matrix4，避免 `nocycle` 测试模式 null 上传崩溃。实测：默认视角 22% 暗部（真阴影）、3776 蓝像素、阴影 on/off 有 808 像素差异（确为真投影）。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
 
 ## 经验教训（后续开发必读）
 
