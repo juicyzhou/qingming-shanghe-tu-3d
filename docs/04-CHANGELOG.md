@@ -184,7 +184,7 @@
 
 | 提交 | 内容 |
 |---|---|
-| `(待补)` | **天空**：`buildSky` 新增白天暖阳（Sprite，昼夜透明度 0~0.95）、夜晚冷月（月牙纹理）+ 星穹（260 点，夜晚浮现 0.75），随 `_nightFactor` 切换，`fog:false` 不被雾淹没。**横屏全屏**：进入画卷时若横屏自动 requestFullscreen（拒绝静默）；暂停菜单新增「进入/退出全屏」开关。**疾跑键**：摇杆右侧新增 PUBG 风格🏃键（按住即跑，与 Shift 同源）。**HUD 尺寸**：小地图手机 140→110px、桌面 150→130px；左列（白衣书生+任务框）240→150px、手机 120px。修复 requestFullscreen 未捕获的 promise 拒绝（headless 报 "Permissions check failed"）。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
+| `aa7ff17` | **天空**：`buildSky` 新增白天暖阳（Sprite，昼夜透明度 0~0.95）、夜晚冷月（月牙纹理）+ 星穹（260 点，夜晚浮现 0.75），随 `_nightFactor` 切换，`fog:false` 不被雾淹没。**横屏全屏**：进入画卷时若横屏自动 requestFullscreen（拒绝静默）；暂停菜单新增「进入/退出全屏」开关。**疾跑键**：摇杆右侧新增 PUBG 风格🏃键（按住即跑，与 Shift 同源）。**HUD 尺寸**：小地图手机 140→110px、桌面 150→130px；左列（白衣书生+任务框）240→150px、手机 120px。修复 requestFullscreen 未捕获的 promise 拒绝（headless 报 "Permissions check failed"）。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
 
 ## 经验教训（后续开发必读）
 
