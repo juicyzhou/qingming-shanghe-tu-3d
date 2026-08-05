@@ -507,9 +507,6 @@ export const LIGHT_UNIFORMS = {
   uMoonDir: { value: new THREE.Vector3(0, -1, 0) },     // 清冷月光方向
   uMoonColor: { value: new THREE.Color('#9fb8d8') },
   uMoonStrength: { value: 0 },                          // 夜晚月光强度 0~1
-  uShadowMap: { value: null },                          // 太阳阴影贴图
-  uShadowMatrix: { value: new THREE.Matrix4() },        // 阴影投影矩阵（恒有效，避免 null 上传崩溃）
-  uHasShadow: { value: 0 },                             // 阴影是否可用
 };
 
 // 手动雾效（避免 three 内置 fog 系统与自定义 shader 的 uniform 冲突）
@@ -525,15 +522,12 @@ varying vec3 vNormal;
 varying vec3 vView;
 varying vec2 vUv;
 varying float vFogDepth;
-varying vec4 vShadowCoord;
-uniform mat4 uShadowMatrix;
 void main() {
   vUv = uv;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   vNormal = normalize(normalMatrix * normal);
   vView = normalize(cameraPosition - (modelMatrix * vec4(position, 1.0)).xyz);
   vFogDepth = -mvPosition.z;
-  vShadowCoord = uShadowMatrix * (modelMatrix * vec4(position, 1.0));
   gl_Position = projectionMatrix * mvPosition;
 }`;
 
@@ -556,24 +550,10 @@ uniform vec3 uFogColor;
 uniform float uFogNear;
 uniform float uFogFar;
 uniform float uFogScale;
-uniform sampler2D uShadowMap;
-uniform float uHasShadow;
 varying vec3 vNormal;
 varying vec3 vView;
 varying vec2 vUv;
 varying float vFogDepth;
-varying vec4 vShadowCoord;
-
-// 阴影：深度贴图采样，阴影中压低太阳光（环境光不受影响）
-// 注：three r170 的 light.shadow.matrix 已含 0.5 偏移（直接映射到 [0,1] UV），勿再乘 0.5
-float sampleShadow() {
-  vec3 proj = vShadowCoord.xyz / max(vShadowCoord.w, 1e-5);
-  if (proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0 || proj.z > 1.0) return 1.0;
-  float depth = texture2D(uShadowMap, proj.xy).r;
-  float bias = 0.004;
-  return (proj.z - bias > depth) ? 0.55 : 1.0; // 阴影中保留 55% 太阳光（柔和，不压黑）
-}
-
 void main() {
   vec4 tex = texture2D(uMap, vUv);
   vec3 base = uColor;
@@ -591,8 +571,7 @@ void main() {
   float ndl = max(dot(n, sd), 0.0);
   float d = floor(ndl * max(uSteps, 0.001) + 0.55) / max(uSteps, 0.001); // 量化明暗
   d = max(d, 0.15);                                // 暗部保底
-  float shad = uHasShadow > 0.5 ? sampleShadow() : 1.0; // 实时阴影
-  vec3 col = uAmbient * (1.0 + uBoost) + uSunColor * d * shad;
+  vec3 col = uAmbient * (1.0 + uBoost) + uSunColor * d;
   // 清冷月光（夜晚补光，朝向月面受光）
   float moonNdl = max(dot(n, normalize(uMoonDir)), 0.0);
   float moonD = floor(moonNdl * max(uSteps, 0.001) + 0.55) / max(uSteps, 0.001);

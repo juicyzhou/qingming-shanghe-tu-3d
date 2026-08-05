@@ -210,6 +210,12 @@
 |---|---|
 | `e0f5441` | **云（修"石墩子"）**：水平平面云 → **billboard 积云**（扁平底+顶部半球凸起，始终面向相机，不再像石板）。**太阳**：放大到 scale 40 + 亮白核心+暖日冕。**阳光 + 阴影（核心）**：toon 着色器加入**实时阴影**——`DirectionalLight` 生成 shadow map（桌面 2048/触屏 1024，PCF/PCFSoft），着色器采样 `uShadowMatrix/uShadowMap/uHasShadow`，阴影中保留 55% 太阳光（柔和不压黑）。**关键修复**：①three r170 的 `light.shadow.matrix` 已含 0.5 偏移（直接映射 [0,1] UV），着色器勿再乘 0.5，否则 UV 出界无阴影；②`uShadowMatrix` 初始化恒为有效 Matrix4，避免 `nocycle` 测试模式 null 上传崩溃。实测：默认视角 22% 暗部（真阴影）、3776 蓝像素、阴影 on/off 有 808 像素差异（确为真投影）。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
 
+## 阶段三十三：像素风取舍（去阴影 · 3D 积云 · 夜空调蓝）
+
+| 提交 | 内容 |
+|---|---|
+| `(待补)` | **去阴影**：toon 像素画风不适合实时阴影 → 移除整套 shadow map（着色器阴影采样、DirectionalLight、castShadow 遍历），画面回归干净像素感，性能回退。**白云再修（3D 积云）**：billboard 仍像贴片 → 改为**重叠球团合并成体的 3D 积云**（每朵云 ~11 个压扁球 `mergeGeometries` 合一，任意视角都是蓬松云朵，5 朵共 5 draw call）。**夜空调蓝**：修 `dayness` 计算——原用 `max(sunH,0)` 导致夜空仍混 15% 暖色（紫灰 61,51,61），改用 `smoothstep(-0.12,0.25,uSunDir.y)` 使太阳低于地平线即纯夜；夜空实测 (33,36,55) 正常深蓝。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
+
 ## 经验教训（后续开发必读）
 
 1. **真实 GPU 与 swiftshader 渲染有差异**：部分伪影仅真机出现，务必用"用户截图分析 + 真机调试工具（射线检测）"定位，勿只依赖本地无头测试。

@@ -34,16 +34,6 @@ export class Game {
     this.renderer = renderer;
     this.canvas = renderer.domElement;
 
-    // ---- 实时阴影：太阳定向光（仅用于生成阴影，toon 着色器手动采样） ----
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = touch ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
-    this.sunLight = new THREE.DirectionalLight(0xffffff, 0);
-    this.sunLight.castShadow = true;
-    this.sunLight.shadow.mapSize.set(touch ? 1024 : 2048, touch ? 1024 : 2048);
-    const sCam = this.sunLight.shadow.camera;
-    sCam.near = 20; sCam.far = 450;
-    sCam.left = -80; sCam.right = 80; sCam.top = 80; sCam.bottom = -80;
-
     // ---- 场景 / 相机 ----
     this.scene = new THREE.Scene();
     // P1-2 傍晚暖光（默认暮色，?day=1 恢复正午；与 materials.js 的 uSunDir/uSunColor 同步）
@@ -57,14 +47,6 @@ export class Game {
     sun.position.set(30, 60, 20);
     this.scene.add(sun);
     this.scene.add(new THREE.HemisphereLight('#fff6e0', '#b7a080', 0.55));
-    // 阴影光源（跟随太阳方向）
-    this.scene.add(this.sunLight);
-    this.scene.add(this.sunLight.target);
-    // 阴影矩阵恒有效（nocycle 测试模式不跑 _applyTimeLighting 也不崩溃）
-    LIGHT_UNIFORMS.uShadowMatrix.value = this.sunLight.shadow.matrix;
-    this.sunLight.position.set(30, 60, 20);
-    this.sunLight.target.position.set(0, 0, 0);
-    this.sunLight.target.updateMatrixWorld();
 
     // ---- 后处理（触屏设备跳过描边以提升帧率；nocomposer 直接渲染用于诊断） ----
     const qp = new URLSearchParams(location.search);
@@ -181,15 +163,6 @@ export class Game {
     this.hud.setPrompt('');
     addEventListener('resize', () => this._resize());
     this._resize(); // 启动即应用竖屏 FOV（P1-3）
-
-    // 网格参与实时阴影（穹顶/水/精灵除外）
-    this.scene.traverse(o => {
-      if (!o.isMesh) return;
-      if (o.geometry && o.geometry.parameters && o.geometry.parameters.radius === 400) return; // 穹顶
-      o.castShadow = true;
-      o.receiveShadow = true;
-    });
-    if (this.world.river) this.world.river.castShadow = false; // 水面不投影
   }
 
   start() {
@@ -409,20 +382,6 @@ export class Game {
     if (moonDir) LIGHT_UNIFORMS.uMoonDir.value.copy(moonDir);
     LIGHT_UNIFORMS.uMoonStrength.value = nf;
     LIGHT_UNIFORMS.uMoonColor.value.copy(new THREE.Color('#9fb8d8'));
-
-    // 阴影光源跟随太阳
-    if (this.sunLight && sunDir) {
-      this.sunLight.position.copy(sunDir).multiplyScalar(200);
-      this.sunLight.target.position.set(0, 0, 0);
-      this.sunLight.target.updateMatrixWorld();
-      LIGHT_UNIFORMS.uShadowMatrix.value = this.sunLight.shadow.matrix;
-      if (this.sunLight.shadow.map) {
-        LIGHT_UNIFORMS.uShadowMap.value = this.sunLight.shadow.map.texture;
-        LIGHT_UNIFORMS.uHasShadow.value = 1;
-      }
-    } else if (this.sunLight) {
-      LIGHT_UNIFORMS.uHasShadow.value = 0; // 夜间无太阳影
-    }
 
     // 雾/背景 = 地平线天空色（白天暖、夜晚暗蓝），远处景物融入天际
     const bg = new THREE.Color('#f2e2be').lerp(new THREE.Color('#2c3352'), nf);

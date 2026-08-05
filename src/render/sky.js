@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // ============================================================
 //  天空系统：穹顶渐变 + 太阳/月亮 + 云层 + 阳光光锥
@@ -42,7 +43,7 @@ void main() {
   vec3 dir = normalize(vWorld);
   float h = dir.y; // -1..1
   float sunH = max(uSunDir.y, 0.0);
-  float dayness = smoothstep(-0.04, 0.22, sunH); // 太阳高于地平线 → 白天
+  float dayness = smoothstep(-0.12, 0.25, uSunDir.y); // 太阳低于地平线较多 → 纯夜
   // 白天：地平线暖 → 天顶蓝（指数低→更多蓝，让可见天空更清透）
   vec3 day = mix(uHorizonDay, uTopDay, pow(max(h, 0.0), 0.3));
   // 夜晚：地平线暗蓝 → 天顶深蓝
@@ -92,8 +93,8 @@ export class Sky {
         uTopDay: { value: new THREE.Color('#2f6db0') },
         uHorizonDay: { value: new THREE.Color('#f2e2be') },
         uDusk: { value: new THREE.Color('#f09550') },
-        uNightTop: { value: new THREE.Color('#141a35') },
-        uNightHorizon: { value: new THREE.Color('#2c3352') },
+        uNightTop: { value: new THREE.Color('#0c1330') },
+        uNightHorizon: { value: new THREE.Color('#2a3454') },
       },
       vertexShader: skyVert,
       fragmentShader: skyFrag,
@@ -160,46 +161,31 @@ export class Sky {
     }));
     scene.add(this.stars);
 
-    // ---- 云层：billboard 积云（扁平底 + 顶部凸起，始终面向相机不像石板） ----
-    const cloudTex = (() => {
-      const c = document.createElement('canvas'); c.width = 256; c.height = 128;
-      const g = c.getContext('2d');
-      const cumulus = (x, y, w, h) => {
-        // 扁平主体
-        const base = g.createRadialGradient(x, y, 2, x, y, w);
-        base.addColorStop(0, 'rgba(255,255,255,0.92)');
-        base.addColorStop(0.6, 'rgba(255,255,255,0.5)');
-        base.addColorStop(1, 'rgba(255,255,255,0)');
-        g.fillStyle = base;
-        g.save(); g.translate(x, y); g.scale(1, h / w);
-        g.beginPath(); g.arc(0, 0, w, 0, Math.PI * 2); g.fill();
-        g.restore();
-        // 顶部半球凸起
-        for (let i = 0; i < 7; i++) {
-          const px = x + (Math.random() - 0.5) * w * 1.1;
-          const py = y - h * (0.25 + Math.random() * 0.55);
-          const pr = w * (0.16 + Math.random() * 0.22);
-          const gr = g.createRadialGradient(px, py, 1, px, py, pr);
-          gr.addColorStop(0, 'rgba(255,255,255,0.8)');
-          gr.addColorStop(1, 'rgba(255,255,255,0)');
-          g.fillStyle = gr;
-          g.beginPath(); g.arc(px, py, pr, 0, Math.PI * 2); g.fill();
-        }
-      };
-      cumulus(128, 96, 118, 52); // 一朵大积云
-      cumulus(210, 105, 62, 28);  // 一朵小碎云
-      return new THREE.CanvasTexture(c);
-    })();
+    // ---- 云层：3D 球形积云（重叠球团并成一体，任意角度都是蓬松云朵） ----
+    const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.96, depthWrite: false, fog: false });
     this.clouds = [];
-    for (let i = 0; i < 9; i++) {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: 0.6, depthWrite: false, fog: false }));
+    for (let i = 0; i < 5; i++) {
+      const geos = [];
+      const puffs = [
+        [0, 0, 0, 1.0], [1.1, 0.25, 0, 0.8], [-1.0, 0.15, 0.2, 0.75],
+        [0.5, 0.62, 0.3, 0.6], [-0.4, 0.7, -0.2, 0.55], [0.2, 0.3, -0.85, 0.65],
+        [1.4, -0.1, -0.4, 0.5], [-1.3, -0.05, 0.4, 0.45],
+        [0, -0.32, 0, 0.95], [0.8, 0.12, 0.55, 0.6], [-0.6, -0.2, 0.5, 0.5],
+      ];
+      for (const [x, y, z, r] of puffs) {
+        const g = new THREE.SphereGeometry(r, 10, 8);
+        g.scale(1, 0.72, 1);   // 压扁
+        g.translate(x, y, z);
+        geos.push(g);
+      }
+      const cloud = new THREE.Mesh(mergeGeometries(geos), cloudMat);
       const a = Math.random() * Math.PI * 2;
-      const r = 160 + Math.random() * 90;
-      const w = 110 + Math.random() * 90;
-      sp.scale.set(w, w * 0.42, 1);
-      sp.position.set(Math.cos(a) * r, 95 + Math.random() * 60, Math.sin(a) * r);
-      scene.add(sp);
-      this.clouds.push(sp);
+      const rad = 160 + Math.random() * 90;
+      const s = 2.2 + Math.random() * 1.4;
+      cloud.scale.set(s, s, s);
+      cloud.position.set(Math.cos(a) * rad, 95 + Math.random() * 60, Math.sin(a) * rad);
+      scene.add(cloud);
+      this.clouds.push(cloud);
     }
 
     // ---- 阳光光柱（细窄锥形光束，从太阳洒向大地；避免糊住天空） ----
