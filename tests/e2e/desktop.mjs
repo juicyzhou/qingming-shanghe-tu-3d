@@ -12,6 +12,8 @@ await wait(300);
 const G = `window.game`;
 
 check('游戏运行中', await ev(`${G}._running`));
+// 冻结 NPC 漫游：避免高小猴等游荡 NPC 随机拦截听书/竞速等场景物交互（测试确定性）
+await ev(`window.game.npcList.forEach(n => n.behavior = 'stand'); 1`);
 
 // ---- 1. 真实对话：桥头干粮 接任务 ----
 check('无任务时指引指向首个可接任务人', await ev(`${G}.getGuideTarget()?.qid === 'bridge_gifts'`));

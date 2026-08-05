@@ -1,17 +1,18 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { toon, flat } from '../render/materials.js';
 
-// 烘焙方块几何到局部坐标（用于同材质合并，减少 draw call）
-function bakeBox(w, h, d, x, y, z) {
-  const g = flat(new THREE.BoxGeometry(w, h, d));
+// 烘焙圆角箱到局部坐标（用于同材质合并，减少 draw call）
+function bakeRounded(w, h, d, seg, rad, x, y, z) {
+  const g = new RoundedBoxGeometry(w, h, d, seg, rad);
   const m = new THREE.Matrix4();
   m.setPosition(x, y, z);
   g.applyMatrix4(m);
   return g;
 }
 
-// 参数化木偶角色：按身高/胖瘦生成身体，肢体以枢轴绕动实现程序化行走动画
+// 参数化木偶角色：圆球头 + 圆角躯干/四肢，肢体以枢轴绕动实现程序化行走动画
 export class Character extends THREE.Group {
   constructor(app) {
     super();
@@ -37,9 +38,11 @@ export class Character extends THREE.Group {
   _build() {
     const H = this.H, g = this.app.girth;
     const torsoW = H * 0.32 * g, torsoH = H * 0.36, torsoD = H * 0.20;
-    const armW = H * 0.085, armL = H * 0.29;
+    const armW = H * 0.085, armL = H * 0.30;
     const legW = H * 0.105, thighL = H * 0.235, shinL = H * 0.26;
-    const hipY = H * 0.56, shoulderY = H * 0.88, headCenter = H * 0.975;
+    const hipY = H * 0.56, shoulderY = H * 0.88;
+    const headR = H * 0.108;          // 圆头半径
+    const headCenter = H * 1.03;      // 头中心（含脖子高度）
 
     const skinMat = toon({ color: this.app.skin });
     const clothMat = toon({ color: this.app.cloth });
@@ -48,47 +51,50 @@ export class Character extends THREE.Group {
 
     this._cached = { hipY, torsoH, headCenter, torsoD };
 
-    // ---- 躯干 ----
-    this.body = new THREE.Mesh(flat(new THREE.BoxGeometry(torsoW, torsoH, torsoD)), clothMat);
+    // ---- 脖子 ----
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(headR * 0.42, headR * 0.5, H * 0.10, 10), skinMat);
+    neck.position.y = headCenter - headR * 0.82;
+    this.add(neck);
+
+    // ---- 躯干（圆角箱，柔和轮廓） ----
+    this.body = new THREE.Mesh(new RoundedBoxGeometry(torsoW, torsoH, torsoD, 2, H * 0.06), clothMat);
     this.body.position.y = hipY + torsoH / 2;
     this.add(this.body);
     // 腰带
-    const belt = new THREE.Mesh(flat(new THREE.BoxGeometry(torsoW + 0.02, H * 0.05, torsoD + 0.02)), trimMat);
+    const belt = new THREE.Mesh(new RoundedBoxGeometry(torsoW + 0.02, H * 0.05, torsoD + 0.02, 2, H * 0.02), trimMat);
     belt.position.y = hipY + H * 0.02;
     this.add(belt);
     // 肩带/围裙
     if (this.app.apron) {
-      const apron = new THREE.Mesh(flat(new THREE.BoxGeometry(torsoW * 0.82, torsoH * 0.85, 0.03)), toon({ color: this.app.apron }));
-      apron.position.set(0, hipY + torsoH / 2 - 0.02, torsoD / 2 + 0.02);
+      const apron = new THREE.Mesh(new RoundedBoxGeometry(torsoW * 0.82, torsoH * 0.85, 0.04, 2, H * 0.02), toon({ color: this.app.apron }));
+      apron.position.set(0, hipY + torsoH / 2 - 0.02, torsoD / 2 + 0.01);
       this.add(apron);
     }
 
-    // ---- 头 ----
-    const headW = H * 0.205, headH = H * 0.24, headD = H * 0.21;
+    // ---- 头（圆球，正脸带贴五官贴图） ----
     this.headGroup = new THREE.Group();
     this.headGroup.position.y = headCenter;
-    const face = toon({ map: this.app.faceTex });
-    const skinFace = skinMat;
-    const head = new THREE.Mesh(new THREE.BoxGeometry(headW, headH, headD), [
-      skinFace, skinFace, skinFace, skinFace, face, skinFace,
-    ]);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 20, 14), toon({ map: this.app.faceTex }));
     this.headGroup.add(head);
-    this._applyHeadStyle(headW, headH);
+    this._applyHeadStyle(headR);
     this.add(this.headGroup);
 
-    // ---- 手臂（肩枢轴；臂+手同色合并为一） ----
+    // ---- 手臂（肩枢轴；上臂+前臂同色合并，手为肤色球） ----
     this.shoulderL = this._limbPivot(-torsoW / 2 - armW / 2 + 0.01, shoulderY);
     this.shoulderR = this._limbPivot(torsoW / 2 + armW / 2 - 0.01, shoulderY);
-    for (const [p, s] of [[this.shoulderL, -1], [this.shoulderR, 1]]) {
+    for (const p of [this.shoulderL, this.shoulderR]) {
       const armGeo = mergeGeometries([
-        bakeBox(armW, armL, armW, 0, -armL / 2, 0),
-        bakeBox(armW * 0.95, H * 0.06, armW * 0.95, 0, -armL + H * 0.03, 0),   // 手(以袖色收口)
+        bakeRounded(armW, armL * 0.72, armW, 2, H * 0.028, 0, -armL * 0.36, 0),     // 上臂
+        bakeRounded(armW * 0.82, armL * 0.40, armW * 0.82, 2, H * 0.022, 0, -armL * 0.82, 0), // 前臂(略细)
       ], false);
       const arm = new THREE.Mesh(armGeo, clothMat);
       p.add(arm);
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(armW * 0.72, 10, 8), skinMat);
+      hand.position.y = -armL + H * 0.015;
+      p.add(hand);
       if (this.app.sleeveColor) {
-        const cuff = new THREE.Mesh(flat(new THREE.BoxGeometry(armW + 0.02, armL * 0.22, armW + 0.02)), toon({ color: this.app.sleeveColor }));
-        cuff.position.y = -armL * 0.82;
+        const cuff = new THREE.Mesh(new RoundedBoxGeometry(armW + 0.03, armL * 0.16, armW + 0.03, 2, H * 0.02), toon({ color: this.app.sleeveColor }));
+        cuff.position.y = -armL * 0.76;
         p.add(cuff);
       }
       this.add(p);
@@ -97,21 +103,19 @@ export class Character extends THREE.Group {
     // ---- 腿（髋大腿 + 膝段小腿/脚合并） ----
     this.hipL = this._limbPivot(-legW * 0.62, hipY);
     this.hipR = this._limbPivot(legW * 0.62, hipY);
-    for (const [hp, side] of [[this.hipL, -1], [this.hipR, 1]]) {
-      const thigh = new THREE.Mesh(flat(new THREE.BoxGeometry(legW, thighL, legW)), pantsMat);
-      thigh.position.y = -thighL / 2;
+    for (const hp of [this.hipL, this.hipR]) {
+      const thigh = new THREE.Mesh(bakeRounded(legW, thighL, legW, 2, H * 0.03, 0, -thighL / 2, 0), pantsMat);
       hp.add(thigh);
       const knee = new THREE.Group();
       knee.position.y = -thighL;
       const shinFootGeo = mergeGeometries([
-        bakeBox(legW * 0.9, shinL, legW * 0.9, 0, -shinL / 2, 0),
-        bakeBox(legW * 1.15, H * 0.05, H * 0.13, 0, -shinL + H * 0.025, H * 0.035),   // 脚(与裤同色)
+        bakeRounded(legW * 0.86, shinL, legW * 0.86, 2, H * 0.024, 0, -shinL / 2, 0),        // 小腿
+        bakeRounded(legW * 1.1, H * 0.06, H * 0.15, 2, H * 0.02, 0, -shinL + H * 0.03, H * 0.04), // 脚
       ], false);
       knee.add(new THREE.Mesh(shinFootGeo, pantsMat));
       hp.add(knee);
       this.add(hp);
     }
-
   }
 
   _limbPivot(x, y) {
@@ -120,69 +124,75 @@ export class Character extends THREE.Group {
     return p;
   }
 
-  // 发型 + 帽饰（辨识度核心）
-  _applyHeadStyle(headW, headH) {
+  // 发型 + 帽饰（辨识度核心；按圆头半径 headR 定位）
+  _applyHeadStyle(headR) {
     const H = this.H;
     const hat = this.app.hat;
+    const hair = this.app.hairStyle;
     const hairMat = toon({ color: this.app.hair });
 
-    // 发髻/双髻/顶髻
-    const hair = this.app.hairStyle;
-    const bun = (x, y, r) => {
-      const m = new THREE.Mesh(flat(new THREE.SphereGeometry(r, 8, 6)), hairMat);
-      m.position.set(x, y, 0);
-      this.headGroup.add(m);
-    };
-    if (hair === 'topknot') bun(0, headH * 0.6, H * 0.055);
-    else if (hair === 'double') { bun(-headW * 0.35, headH * 0.55, H * 0.05); bun(headW * 0.35, headH * 0.55, H * 0.05); }
-    else if (hair === 'bald') {
-      const cap = new THREE.Mesh(flat(new THREE.SphereGeometry(headW * 0.72, 10, 6)), toon({ color: this.app.skin }));
-      cap.position.y = headH * 0.15;
-      cap.scale.y = 0.8;
-      this.headGroup.add(cap);
-      for (const dx of [-0.08, 0, 0.08]) {
-        const scar = new THREE.Mesh(flat(new THREE.SphereGeometry(H * 0.012, 5, 4)), toon({ color: 0x8a4a3a }));
-        scar.position.set(dx, headH * 0.72, headW * 0.72);
+    if (hair === 'bald') {
+      // 僧人头巾（皮肤色包顶）
+      const bald = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.04, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon({ color: this.app.skin }));
+      bald.position.y = headR * 0.10;
+      this.headGroup.add(bald);
+      for (const dx of [-0.07, 0, 0.07]) {
+        const scar = new THREE.Mesh(new THREE.SphereGeometry(H * 0.012, 5, 4), toon({ color: 0x8a4a3a }));
+        scar.position.set(dx, headR * 0.9, headR * 0.62);
         this.headGroup.add(scar);
       }
-    } else if (hair === 'long') {
-      const back = new THREE.Mesh(flat(new THREE.BoxGeometry(headW * 0.6, headH * 0.5, 0.05)), hairMat);
-      back.position.set(0, -headH * 0.05, -headD2(headW));
-      this.headGroup.add(back);
-    }
-    // 顶发
-    const topHair = new THREE.Mesh(flat(new THREE.SphereGeometry(headW * 0.78, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2)), hairMat);
-    topHair.position.y = headH * 0.25;
-    this.headGroup.add(topHair);
+    } else {
+      // 发帽：覆盖头顶至发际线的半球，勾勒发型轮廓
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.03, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
+      cap.position.y = headR * 0.10;
+      this.headGroup.add(cap);
 
-    // 帽子
+      // 发髻/双髻
+      const bun = (x, y, r) => {
+        const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), hairMat);
+        m.position.set(x, y, 0);
+        this.headGroup.add(m);
+      };
+      if (hair === 'topknot') {
+        bun(0, headR * 0.85, H * 0.052);
+      } else if (hair === 'double') {
+        bun(-headR * 0.66, headR * 0.78, H * 0.048);
+        bun(headR * 0.66, headR * 0.78, H * 0.048);
+      } else if (hair === 'long') {
+        const back = new THREE.Mesh(new THREE.BoxGeometry(headR * 1.1, headR * 0.9, 0.05), hairMat);
+        back.position.set(0, -headR * 0.5, -headR * 0.92);
+        this.headGroup.add(back);
+      }
+    }
+
+    // 帽子（戴在发帽之上）
     const darkCap = toon({ color: 0x1c1814 });
     if (hat === 'futou') {
-      const cap = new THREE.Mesh(flat(new THREE.BoxGeometry(headW * 0.8, H * 0.07, headW * 0.95)), darkCap);
-      cap.position.y = headH * 0.5;
-      this.headGroup.add(cap);
+      const capM = new THREE.Mesh(new THREE.BoxGeometry(headR * 1.7, H * 0.065, headR * 1.9), darkCap);
+      capM.position.y = headR * 0.62;
+      this.headGroup.add(capM);
       for (const s of [-1, 1]) {
-        const wing = new THREE.Mesh(flat(new THREE.BoxGeometry(H * 0.05, H * 0.012, H * 0.2)), darkCap);
-        wing.position.set(s * headW * 0.2, headH * 0.52, -headD2(headW) * 0.4);
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(H * 0.05, H * 0.012, H * 0.22), darkCap);
+        wing.position.set(s * headR * 1.05, headR * 0.66, -headR * 0.55);
         this.headGroup.add(wing);
       }
     } else if (hat === 'straw') {
-      const cone = new THREE.Mesh(flat(new THREE.ConeGeometry(headW * 1.0, H * 0.16, 8)), toon({ color: 0xc9b478 }));
-      cone.position.y = headH * 0.62;
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(headR * 2.0, H * 0.15, 10), toon({ color: 0xc9b478 }));
+      cone.position.y = headR * 0.72;
       this.headGroup.add(cone);
     } else if (hat === 'official') {
-      const cap = new THREE.Mesh(flat(new THREE.BoxGeometry(headW * 0.85, H * 0.09, headW * 0.85)), toon({ color: 0x1a1612 }));
-      cap.position.y = headH * 0.55;
-      this.headGroup.add(cap);
+      const capM = new THREE.Mesh(new THREE.BoxGeometry(headR * 1.8, H * 0.09, headR * 1.8), toon({ color: 0x1a1612 }));
+      capM.position.y = headR * 0.7;
+      this.headGroup.add(capM);
       for (const s of [-1, 1]) {
-        const wing = new THREE.Mesh(flat(new THREE.BoxGeometry(H * 0.22, H * 0.012, H * 0.02)), toon({ color: 0x1a1612 }));
-        wing.position.set(s * H * 0.12, headH * 0.56, 0);
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(H * 0.26, H * 0.012, H * 0.02), toon({ color: 0x1a1612 }));
+        wing.position.set(s * H * 0.13, headR * 0.72, 0);
         this.headGroup.add(wing);
       }
     } else if (hat === 'guanyin') {
-      const cap = new THREE.Mesh(flat(new THREE.BoxGeometry(headW * 0.8, H * 0.1, headW * 0.92)), toon({ color: 0xcaa24a }));
-      cap.position.y = headH * 0.55;
-      this.headGroup.add(cap);
+      const capM = new THREE.Mesh(new THREE.BoxGeometry(headR * 1.8, H * 0.1, headR * 1.9), toon({ color: 0xcaa24a }));
+      capM.position.y = headR * 0.66;
+      this.headGroup.add(capM);
     }
   }
 
@@ -219,5 +229,3 @@ export class Character extends THREE.Group {
     this.rotation.y = angle;
   }
 }
-
-function headD2(w) { return w * 1.0; }

@@ -28,9 +28,9 @@ export class Player extends Character {
 
   get groundY() { return this.inside ? 0 : groundHeight(this.px, this.pz); }
 
-  // 头部位置（第一人称眼睛/第三人称注视点）
+  // 头部位置（第一人称眼睛/第三人称注视点）——圆头中心在 1.03H，眼位对齐
   headPos(target) {
-    target.set(this.px, this.groundY + this.H * 0.94, this.pz);
+    target.set(this.px, this.groundY + this.H * 1.03, this.pz);
     return target;
   }
 
@@ -91,7 +91,7 @@ export class Player extends Character {
     const groundY = this.groundY;
     if (this.viewMode === 1) {
       // 第一人称：头部位置 + 朝向（相机 -z 必须对准移动正前方 sin/cos yaw）
-      cam.position.set(this.px, groundY + this.H * 0.92, this.pz);
+      cam.position.set(this.px, groundY + this.H * 1.03, this.pz);
       cam.rotation.order = 'YXZ';
       cam.rotation.set(this.pitch, this.yaw + Math.PI, 0);
       this.camPos.copy(cam.position);
