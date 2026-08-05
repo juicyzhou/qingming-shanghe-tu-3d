@@ -47,12 +47,15 @@ export function createComposer(renderer, scene, camera, { outline: useOutline = 
       void main() {
         vec4 c = texture2D(tDiffuse, vUv);
         vec3 col = c.rgb;
+        // 天空遮罩：画面上部为天空，少暖化，保住蓝天/夜空的真实色
+        float skyMask = smoothstep(0.22, 0.5, vUv.y);
+        float warm = uWarm * (1.0 - skyMask * 0.88);
         // 暖化（压蓝、抬红黄）
-        col.r += uWarm * 0.6;
-        col.g += uWarm * 0.35;
-        col.b -= uWarm * 0.5;
+        col.r += warm * 0.6;
+        col.g += warm * 0.35;
+        col.b -= warm * 0.5;
         // 纸感：略提亮暗部、柔化
-        col = mix(col, col * col * 0.35 + col * 0.65, uPaper);
+        col = mix(col, col * col * 0.35 + col * 0.65, uPaper * (1.0 - skyMask * 0.7));
         // 暗角
         vec2 d = vUv - 0.5;
         float vig = 1.0 - uVignette * dot(d, d) * 4.0;

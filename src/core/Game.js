@@ -13,6 +13,7 @@ import { LIGHT_UNIFORMS, FOG_UNIFORMS } from '../render/materials.js';
 import { reputationLevel, reputationTitle } from '../game/HUD.js';
 import { WATER_UNIFORMS } from '../render/shaders.js';
 import { Weather } from '../render/weather.js';
+import { sunDirection, moonDirection } from '../render/sky.js';
 import { Inventory } from '../game/Inventory.js';
 import { QuestSystem } from '../game/QuestSystem.js';
 import { Analytics } from '../game/Analytics.js';
@@ -355,31 +356,41 @@ export class Game {
     return 0;
   }
 
-  // P2-2 昼夜光照：白昼保持当前暖色画风；入夜整体微暗 + 夜空转深（建筑靠"灯笼暖光"保持可见）
+  // P2-2 昼夜光照：太阳东升西落、月光清冷；白昼保持暖色画风，入夜建筑靠"灯笼暖光"+月光
   // P2-5 雨天再整体微暗
   _applyTimeLighting() {
     const nf = this._nightFactor();
     const day = 1 - nf;
     const rainDim = 1 - (this.weather ? this.weather.raininess : 0) * 0.14;
-    LIGHT_UNIFORMS.uAmbient.value.copy(this._ambDay).lerp(this._ambNight, nf)
-      .multiplyScalar(0.53 * (0.8 + 0.2 * day) * rainDim);
-    LIGHT_UNIFORMS.uSunColor.value.copy(this._sunDay).lerp(this._sunNight, nf)
-      .multiplyScalar(0.8 * (0.62 + 0.38 * day) * rainDim);
-    const bg = this._bgDay.clone().lerp(this._bgNight, nf);
+    const sunDir = sunDirection(this.hour);   // 6~18时东升西落，夜间 null
+    const moonDir = moonDirection(this.hour); // 18~6时月亮，白天 null
+    const sunH = sunDir ? sunDir.y : 0;
+    const dayFactor = Math.max(0, Math.min(1, (sunH + 0.05) * 2.5)); // 0=夜 1=正午
+
+    // 太阳方向与颜色（随东升西落；近地平线暖橙，正午亮白）
+    if (sunDir) LIGHT_UNIFORMS.uSunDir.value.copy(sunDir);
+    const warm = Math.exp(-Math.pow((sunH - 0.15) * 2.2, 2)); // 晨昏偏橙
+    const sunColor = new THREE.Color('#fff4dc').lerp(new THREE.Color('#ffb36a'), warm * 0.85);
+    LIGHT_UNIFORMS.uSunColor.value.copy(sunColor)
+      .multiplyScalar(0.8 * (0.05 + 0.95 * dayFactor) * rainDim);
+
+    // 环境光：白天暖，夜晚灯笼暖 + 冷调底
+    const amb = new THREE.Color('#f6e6c8').lerp(new THREE.Color('#5a3a28'), nf);
+    LIGHT_UNIFORMS.uAmbient.value.copy(amb).multiplyScalar(0.5 * (0.7 + 0.3 * dayFactor) * rainDim);
+
+    // 清冷月光
+    if (moonDir) LIGHT_UNIFORMS.uMoonDir.value.copy(moonDir);
+    LIGHT_UNIFORMS.uMoonStrength.value = nf;
+    LIGHT_UNIFORMS.uMoonColor.value.copy(new THREE.Color('#9fb8d8'));
+
+    // 雾/背景 = 地平线天空色（白天暖、夜晚暗蓝），远处景物融入天际
+    const bg = new THREE.Color('#f2e2be').lerp(new THREE.Color('#2c3352'), nf);
     FOG_UNIFORMS.uFogColor.value.copy(bg);
     this.scene.background.copy(bg);
     if (this.scene.fog) this.scene.fog.color.copy(bg);
-    this._syncSky(nf); // 太阳/星月随昼夜浮现
-  }
 
-  // 天空：白天太阳、夜晚星月（透明度随夜因子）
-  _syncSky(nf = this._nightFactor()) {
-    const sky = this.world && this.world.sky;
-    if (!sky) return;
-    const day = 1 - nf;
-    sky.sun.material.opacity = day * 0.95;
-    sky.moon.material.opacity = nf * 0.85;
-    sky.stars.material.opacity = nf * 0.75;
+    // 天空系统（穹顶/日月/云/光锥）
+    if (this.world && this.world.sky) this.world.sky.update(this.hour, nf);
   }
 
   // P2-5 天气联动：水面光斑/雨色 + 雨声

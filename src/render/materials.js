@@ -504,6 +504,9 @@ export const LIGHT_UNIFORMS = {
   uBoost: { value: 0 },    // 室内环境光增益，避免背阴面压成灰暗
   uOpacity: { value: 1 },  // 透明度
   uUseAlpha: { value: 0 }, // 是否使用贴图 alpha（卷轴等镂空）
+  uMoonDir: { value: new THREE.Vector3(0, -1, 0) },     // 清冷月光方向
+  uMoonColor: { value: new THREE.Color('#9fb8d8') },
+  uMoonStrength: { value: 0 },                          // 夜晚月光强度 0~1
 };
 
 // 手动雾效（避免 three 内置 fog 系统与自定义 shader 的 uniform 冲突）
@@ -540,6 +543,9 @@ uniform float uSteps;
 uniform float uBoost;
 uniform float uOpacity;
 uniform float uUseAlpha;
+uniform vec3 uMoonDir;
+uniform vec3 uMoonColor;
+uniform float uMoonStrength;
 uniform vec3 uFogColor;
 uniform float uFogNear;
 uniform float uFogFar;
@@ -566,6 +572,10 @@ void main() {
   float d = floor(ndl * max(uSteps, 0.001) + 0.55) / max(uSteps, 0.001); // 量化明暗
   d = max(d, 0.15);                                // 暗部保底
   vec3 col = uAmbient * (1.0 + uBoost) + uSunColor * d;
+  // 清冷月光（夜晚补光，朝向月面受光）
+  float moonNdl = max(dot(n, normalize(uMoonDir)), 0.0);
+  float moonD = floor(moonNdl * max(uSteps, 0.001) + 0.55) / max(uSteps, 0.001);
+  col += uMoonColor * moonD * uMoonStrength;
   // 边缘光：仅向阳面、强度克制
   float rim = pow(1.0 - max(dot(n, vv), 0.0), uRimPower);
   rim *= smoothstep(0.05, 0.3, ndl);
