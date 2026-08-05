@@ -214,7 +214,7 @@
 
 | 提交 | 内容 |
 |---|---|
-| `(待补)` | **去阴影**：toon 像素画风不适合实时阴影 → 移除整套 shadow map（着色器阴影采样、DirectionalLight、castShadow 遍历），画面回归干净像素感，性能回退。**白云再修（3D 积云）**：billboard 仍像贴片 → 改为**重叠球团合并成体的 3D 积云**（每朵云 ~11 个压扁球 `mergeGeometries` 合一，任意视角都是蓬松云朵，5 朵共 5 draw call）。**夜空调蓝**：修 `dayness` 计算——原用 `max(sunH,0)` 导致夜空仍混 15% 暖色（紫灰 61,51,61），改用 `smoothstep(-0.12,0.25,uSunDir.y)` 使太阳低于地平线即纯夜；夜空实测 (33,36,55) 正常深蓝。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
+| `e6779ce` | **去阴影**：toon 像素画风不适合实时阴影 → 移除整套 shadow map（着色器阴影采样、DirectionalLight、castShadow 遍历），画面回归干净像素感，性能回退。**白云再修（3D 积云）**：billboard 仍像贴片 → 改为**重叠球团合并成体的 3D 积云**（每朵云 ~11 个压扁球 `mergeGeometries` 合一，任意视角都是蓬松云朵，5 朵共 5 draw call）。**夜空调蓝**：修 `dayness` 计算——原用 `max(sunH,0)` 导致夜空仍混 15% 暖色（紫灰 61,51,61），改用 `smoothstep(-0.12,0.25,uSunDir.y)` 使太阳低于地平线即纯夜；夜空实测 (33,36,55) 正常深蓝。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
 
 ## 经验教训（后续开发必读）
 
