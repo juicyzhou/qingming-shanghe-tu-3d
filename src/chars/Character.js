@@ -114,8 +114,11 @@ export class Character extends THREE.Group {
     // ---- 头（圆球） + 脖子 ----
     this.headGroup = new THREE.Group();
     this.headGroup.position.y = headCenter;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 20, 14), toon({ map: this.app.faceTex }));
-    head.scale.set(1.0, 1.05, 0.98);   // 头型略卵形，更接近真人，非正圆坨
+    // 胶囊头：圆柱中段 + 圆润半球顶 —— 长而不尖（卵形缩放会拉出尖顶）
+    const head = new THREE.Mesh(new THREE.CapsuleGeometry(headR, headR * 0.28, 6, 16), toon({ map: this.app.faceTex }));
+    // 胶囊 UV 与球体不同（正脸在 u=0 而非 0.25）→ 偏移 0.25，使脸贴图正脸带对准 +Z
+    const hUv = head.geometry.attributes.uv;
+    for (let i = 0; i < hUv.count; i++) hUv.setX(i, (hUv.getX(i) + 0.25) % 1);
     this.headGroup.add(head);
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(headR * 0.42, headR * 0.5, H * 0.16, 10), skinMat);
     neck.position.y = headCenter - headR * 0.82;
@@ -187,8 +190,8 @@ export class Character extends THREE.Group {
         this.headGroup.add(scar);
       }
     } else {
-      // 发帽（覆盖头顶至发际线）
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.02, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
+      // 发帽（覆盖胶囊头顶至发际线）
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.08, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
       cap.position.y = headR * 0.10;
       this.headGroup.add(cap);
 
@@ -234,13 +237,13 @@ export class Character extends THREE.Group {
       band.position.y = headR * 0.16;
       this.headGroup.add(band);
     } else if (hat === 'dongpo') {
-      // 东坡巾：软圆角方帽（比头略宽、贴合头型、微斜），非硬方盒
-      const cap = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.22, H * 0.10, headR * 1.22, 2, H * 0.028), darkMat);
-      cap.position.y = headR * 0.55;
+      // 东坡巾：坐于头顶（不沉入头内），窄而高，微斜
+      const cap = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.10, H * 0.11, headR * 1.10, 2, H * 0.026), darkMat);
+      cap.position.y = headR + H * 0.055;
       cap.rotation.z = 0.05;   // 微斜更自然
       this.headGroup.add(cap);
-      const band = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.32, H * 0.022, headR * 1.32, 2, H * 0.01), toon({ color: 0x3a3226 }));
-      band.position.y = headR * 0.14;
+      const band = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.16, H * 0.022, headR * 1.16, 2, H * 0.01), toon({ color: 0x3a3226 }));
+      band.position.y = headR;
       this.headGroup.add(band);
     } else if (hat === 'jin') {
       // 布巾：裹头圆筒
