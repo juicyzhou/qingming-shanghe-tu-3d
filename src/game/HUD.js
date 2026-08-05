@@ -9,13 +9,14 @@ const CSS = `
   #hud .panel{background:linear-gradient(160deg,#f3e8cd,#e7d7b4);border:3px solid #8a6a44;border-radius:10px;
     box-shadow:0 4px 14px rgba(70,50,20,.35), inset 0 0 0 1px rgba(255,250,230,.5);}
   #hud .topbar{position:absolute;top:12px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
-  #hud .rep-coins{display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px;gap:3px;}
-  #hud .rep-coins .rep{font-size:13px;font-weight:bold;color:#8a3a20;line-height:1.2;white-space:nowrap;}
-  #hud .coins{display:flex;align-items:center;gap:6px;font-size:17px;font-weight:bold;line-height:1;}
-  #hud .coin-ico{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd76a,#c8912a 70%);box-shadow:0 1px 3px rgba(0,0,0,.4);position:relative;}
-  #hud .coin-ico::after{content:"";position:absolute;inset:5px;border-radius:50%;border:1.5px dashed #8a5a16;}
-  #hud .quest-track{min-width:210px;max-width:320px;padding:10px 14px;font-size:14px;line-height:1.7;}
-  #hud .quest-track h3{margin:0 0 4px;font-size:15px;color:#6e4a20;border-bottom:1px dashed #a08050;padding-bottom:3px;}
+  #hud .leftcol{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;max-width:240px;}
+  #hud .rep-coins{display:flex;flex-direction:column;align-items:flex-start;padding:6px 10px;gap:3px;}
+  #hud .rep-coins .rep{font-size:12px;font-weight:bold;color:#8a3a20;line-height:1.2;white-space:nowrap;}
+  #hud .coins{display:flex;align-items:center;gap:5px;font-size:15px;font-weight:bold;line-height:1;}
+  #hud .coin-ico{width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd76a,#c8912a 70%);box-shadow:0 1px 3px rgba(0,0,0,.4);position:relative;}
+  #hud .coin-ico::after{content:"";position:absolute;inset:4px;border-radius:50%;border:1.5px dashed #8a5a16;}
+  #hud .quest-track{width:100%;padding:6px 10px;font-size:12px;line-height:1.6;background:rgba(243,232,205,.68);}
+  #hud .quest-track h3{margin:0 0 2px;font-size:12px;color:#6e4a20;border-bottom:1px dashed #a08050;padding-bottom:2px;}
   #hud .quest-track .qitem{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #hud .quest-track .qitem.done{color:#5a6e3a;}
   #hud .minimap-wrap{text-align:right;}
@@ -150,12 +151,13 @@ const CSS = `
   #hud .questlog .row.done{color:#5a6e3a;text-decoration:line-through;}
   /* 触屏/小屏适配 */
   @media (pointer:coarse), (max-width:768px){
-    #hud .rep-coins{padding:6px 10px;}
-    #hud .rep-coins .rep{font-size:12px;}
-    #hud .coins{font-size:14px;}
-    #hud .coin-ico{width:16px;height:16px;}
+    #hud .rep-coins{padding:5px 9px;}
+    #hud .rep-coins .rep{font-size:11px;}
+    #hud .coins{font-size:13px;}
+    #hud .coin-ico{width:14px;height:14px;}
     #hud .coin-ico::after{inset:3px;}
-    #hud .quest-track{min-width:110px;max-width:150px;padding:6px 10px;font-size:12px;}
+    #hud .quest-track{padding:5px 9px;font-size:11px;background:rgba(243,232,205,.66);}
+    #hud .quest-track h3{font-size:11px;}
     #hud .hint{display:none;}
     #hud canvas.minimap{width:140px;height:140px;}
     #hud .dialogue{width:94vw;padding:12px 14px;font-size:15px;}
@@ -189,11 +191,13 @@ export class HUD {
     const h = this.el;
     h.innerHTML = `
       <div class="topbar">
-        <div class="panel rep-coins">
-          <div class="rep" id="rep">白衣书生</div>
-          <div class="coins"><span class="coin-ico"></span><span id="coinval">20</span> 文</div>
+        <div class="leftcol">
+          <div class="panel rep-coins">
+            <div class="rep" id="rep">白衣书生</div>
+            <div class="coins"><span class="coin-ico"></span><span id="coinval">20</span> 文</div>
+          </div>
+          <div class="panel quest-track" id="questtrack"><h3>· 任务 ·</h3></div>
         </div>
-        <div class="panel quest-track" id="questtrack"><h3>· 任务 ·</h3></div>
         <div class="minimap-wrap"><canvas class="minimap" width="200" height="200" id="minimap"></canvas></div>
       </div>
       <div class="hint">WASD 行走 · Shift 疾跑 · E 交谈/互动<br>V 切换视角 · J 任务 · 鼠标 视角</div>
@@ -883,8 +887,9 @@ export class HUD {
     const g = c.getContext('2d');
     const S = c.width; // 200，更高分辨率更清晰
     g.clearRect(0, 0, S, S);
-    // 世界范围 → 画布
-    const map = (x, z) => [S / 2 + x * (S / 150), S / 2 + z * (S / 150)];
+    // 世界范围 → 画布：视野收窄到内容区，让建筑/桥/河铺满地图（减少空白）
+    const X0 = -32, X1 = 32, Z0 = -10, Z1 = 72;
+    const map = (x, z) => [((x - X0) / (X1 - X0)) * S, ((z - Z0) / (Z1 - Z0)) * S];
     g.fillStyle = '#efe2c0';
     g.fillRect(0, 0, S, S);
     // 汴河
