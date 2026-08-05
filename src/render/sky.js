@@ -43,8 +43,8 @@ void main() {
   float h = dir.y; // -1..1
   float sunH = max(uSunDir.y, 0.0);
   float dayness = smoothstep(-0.04, 0.22, sunH); // 太阳高于地平线 → 白天
-  // 白天：地平线暖 → 天顶蓝（指数低→更多蓝）
-  vec3 day = mix(uHorizonDay, uTopDay, pow(max(h, 0.0), 0.4));
+  // 白天：地平线暖 → 天顶蓝（指数低→更多蓝，让可见天空更清透）
+  vec3 day = mix(uHorizonDay, uTopDay, pow(max(h, 0.0), 0.3));
   // 夜晚：地平线暗蓝 → 天顶深蓝
   vec3 night = mix(uNightHorizon, uNightTop, pow(max(h, 0.0), 0.5));
   // 晨昏暖橙（太阳贴近地平线时，地平线一圈泛红）
@@ -89,7 +89,7 @@ export class Sky {
       fog: false,
       uniforms: {
         uSunDir: { value: this.sunDir.clone() },
-        uTopDay: { value: new THREE.Color('#5f9ad0') },
+        uTopDay: { value: new THREE.Color('#2f6db0') },
         uHorizonDay: { value: new THREE.Color('#f2e2be') },
         uDusk: { value: new THREE.Color('#f09550') },
         uNightTop: { value: new THREE.Color('#141a35') },
@@ -101,11 +101,26 @@ export class Sky {
     const dome = new THREE.Mesh(new THREE.SphereGeometry(400, 28, 18), this.skyMat);
     scene.add(dome);
 
-    // ---- 太阳 ----
-    const sunTex = radialSprite(128,
-      ['rgba(255,244,200,1)', 'rgba(255,210,130,0.85)', 'rgba(255,190,90,0)']);
+    // ---- 太阳：亮白核心 + 暖色日冕（更真实） ----
+    const sunTex = (() => {
+      const c = document.createElement('canvas'); c.width = c.height = 160;
+      const g = c.getContext('2d');
+      // 日冕（大而柔和）
+      const corona = g.createRadialGradient(80, 80, 6, 80, 80, 78);
+      corona.addColorStop(0, 'rgba(255,244,210,0.9)');
+      corona.addColorStop(0.35, 'rgba(255,225,150,0.35)');
+      corona.addColorStop(1, 'rgba(255,210,120,0)');
+      g.fillStyle = corona; g.fillRect(0, 0, 160, 160);
+      // 亮白核心（小、清晰）
+      const core = g.createRadialGradient(80, 80, 0, 80, 80, 20);
+      core.addColorStop(0, 'rgba(255,255,252,1)');
+      core.addColorStop(0.7, 'rgba(255,248,225,0.95)');
+      core.addColorStop(1, 'rgba(255,235,190,0)');
+      g.fillStyle = core; g.beginPath(); g.arc(80, 80, 20, 0, Math.PI * 2); g.fill();
+      return new THREE.CanvasTexture(c);
+    })();
     this.sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTex, transparent: true, opacity: 0.95, depthWrite: false, fog: false }));
-    this.sun.scale.set(32, 32, 1);
+    this.sun.scale.set(26, 26, 1);
     scene.add(this.sun);
 
     // ---- 月亮 ----
@@ -145,37 +160,45 @@ export class Sky {
     }));
     scene.add(this.stars);
 
-    // ---- 云层（漂移的软云 sprites） ----
+    // ---- 云层：横向拉长的水平云带（非 billboard，平贴高空更像真云） ----
     const cloudTex = (() => {
-      const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+      const c = document.createElement('canvas'); c.width = 512; c.height = 128;
       const g = c.getContext('2d');
-      for (let i = 0; i < 26; i++) {
-        const x = Math.random() * 256, y = 40 + Math.random() * 60;
-        const r = 22 + Math.random() * 34;
-        const grad = g.createRadialGradient(x, y, r * 0.2, x, y, r);
-        grad.addColorStop(0, 'rgba(255,255,255,0.85)');
+      for (let i = 0; i < 16; i++) {
+        const x = Math.random() * 512, y = 40 + Math.random() * 55;
+        const rw = 26 + Math.random() * 55, rh = rw * (0.3 + Math.random() * 0.25);
+        const grad = g.createRadialGradient(x, y, 1, x, y, rw);
+        grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+        grad.addColorStop(0.6, 'rgba(255,255,255,0.4)');
         grad.addColorStop(1, 'rgba(255,255,255,0)');
         g.fillStyle = grad;
-        g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        g.save(); g.translate(x, y); g.scale(1, rh / rw);
+        g.beginPath(); g.arc(0, 0, rw, 0, Math.PI * 2); g.fill();
+        g.restore();
       }
       return new THREE.CanvasTexture(c);
     })();
     this.clouds = [];
-    for (let i = 0; i < 6; i++) {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: 0.5, depthWrite: false, fog: false, rotation: Math.random() * Math.PI }));
+    const cloudMat = new THREE.MeshBasicMaterial({ map: cloudTex, transparent: true, opacity: 0.55, depthWrite: false, fog: false, side: THREE.DoubleSide });
+    for (let i = 0; i < 7; i++) {
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), cloudMat);
       const a = Math.random() * Math.PI * 2;
-      const r = 160 + Math.random() * 70;
-      sp.scale.set(55 + Math.random() * 45, 26 + Math.random() * 20, 1);
-      sp.position.set(Math.cos(a) * r, 95 + Math.random() * 55, Math.sin(a) * r);
-      sp.userData.baseZ = sp.position.z;
-      scene.add(sp);
-      this.clouds.push(sp);
+      const r = 150 + Math.random() * 90;
+      const w = 150 + Math.random() * 130;
+      pl.scale.set(w, w * 0.32, 1);
+      pl.position.set(Math.cos(a) * r, 95 + Math.random() * 60, Math.sin(a) * r);
+      pl.rotation.x = -Math.PI / 2 + (Math.random() - 0.5) * 0.2; // 近乎水平
+      pl.rotation.z = Math.random() * Math.PI;
+      scene.add(pl);
+      this.clouds.push(pl);
     }
 
-    // ---- 阳光光锥（从太阳洒向大地的光柱） ----
-    const rayTex = radialSprite(64, ['rgba(255,220,150,0.5)', 'rgba(255,200,110,0.12)', 'rgba(255,190,90,0)']);
-    this.ray = new THREE.Sprite(new THREE.SpriteMaterial({ map: rayTex, transparent: true, opacity: 0, depthWrite: false, fog: false, blending: THREE.AdditiveBlending }));
-    this.ray.scale.set(140, 220, 1);
+    // ---- 阳光光柱（细窄锥形光束，从太阳洒向大地；避免糊住天空） ----
+    const rayGeo = new THREE.CylinderGeometry(1.2, 5, 110, 12, 1, true);
+    this.ray = new THREE.Mesh(rayGeo, new THREE.MeshBasicMaterial({
+      color: 0xffe3b0, transparent: true, opacity: 0, depthWrite: false, fog: false,
+      side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    }));
     scene.add(this.ray);
   }
 
@@ -211,20 +234,22 @@ export class Sky {
     this.stars.material.opacity = nightFactor * 0.8;
 
     // 云：随昼亮/夜暗，缓慢漂移
-    const cloudOp = this.dayness * 0.5 + 0.02;
+    const cloudOp = this.dayness * 0.55 + 0.02;
     this.clouds.forEach((c, i) => {
-      c.position.x += 0.06; // 东→西漂
-      if (c.position.x > 250) c.position.x = -250;
-      c.material.opacity = cloudOp * (0.65 + 0.35 * Math.sin(this.hour * 2 + i));
+      c.position.x += 0.05; // 东→西漂
+      if (c.position.x > 280) c.position.x = -280;
+      c.material.opacity = cloudOp * (0.7 + 0.3 * Math.sin(this.hour * 2 + i));
     });
 
-    // 光锥：从太阳方向洒向大地
-    if (sunDir && sunDir.y > 0.05) {
-      this.ray.material.opacity = 0.16 * Math.min(1, sunDir.y * 2) * this.dayness;
-      this.ray.position.copy(sunDir).multiplyScalar(95);
-      this.ray.material.rotation = Math.atan2(sunDir.x, sunDir.z) * -1;
+    // 阳光光柱：仅低角度（日出/日落）显现的金色光束；正午太阳在头顶不显示（真实）
+    if (sunDir && sunDir.y > 0.06 && sunDir.y < 0.4) {
+      const axis = sunDir.clone().negate(); // 从太阳指向原点
+      this.ray.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.normalize());
+      this.ray.position.copy(sunDir).multiplyScalar(55);
+      this.ray.material.opacity = 0.16 * Math.min(1, (sunDir.y - 0.06) * 4) * this.dayness;
+      this.ray.visible = true;
     } else {
-      this.ray.material.opacity = 0;
+      this.ray.visible = false;
     }
   }
 }
