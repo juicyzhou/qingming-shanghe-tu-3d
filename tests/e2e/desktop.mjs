@@ -25,10 +25,10 @@ check('接任务后指引仍指向货郎(当前目标)', await ev(`${G}.getGuide
 await ev(`${G}.tryInteract(); 1`);
 await click('.d-opt');
 check('与货郎再谈推进到"送茶摊"', await ev(`${G}.quests.state.bridge_gifts.objectiveIndex === 1`));
-check('指引切到茶摊', await ev(`${G}.getGuideTarget()?.qid === 'bridge_gifts' && Math.abs(${G}.getGuideTarget()?.x - 3) < 1`));
+check('指引切到茶摊', await ev(`${G}.getGuideTarget()?.qid === 'bridge_gifts' && Math.abs(${G}.getGuideTarget()?.x - 2) < 1.5`));
 
 // ---- 2. 送烧饼到茶摊（真实交付） ----
-await setPos(3, 45.6);
+await setPos(2, 44);
 await ev(`${G}.tryInteract(); 1`);
 check('茶摊对话打开', await ev(`${G}.hud.dialogueOpen`));
 await click('.d-opt'); // 交付
@@ -108,14 +108,14 @@ check('点唱出故事文字', await ev(`document.querySelector('.s-lines').text
 await click('#s-close');
 
 // ---- 11. 撑船竞速 ----
-await setPos(16, 17);
+await setPos(26, 17);
 await ev(`${G}.tryInteract(); 1`);
 check('竞速面板打开并冻结玩家', await ev(`getComputedStyle(document.getElementById('race')).display === 'block' && !!${G}.hud._minigameClose`));
 await ev(`${G}.hud._minigameClose(); 1`);
 check('竞速可正常关闭', await ev(`${G}.hud._minigameClose === null`));
 
 // ---- 12. 买茶任务（真实购买对话） ----
-await setPos(5.4, -55); // 茶博士
+await setPos(-5, 12); // 茶博士（茶肆门前）
 await ev(`${G}.tryInteract(); 1`);
 await click('.d-opt'); // 接任务
 check('接受买茶任务', await ev(`${G}.quests.status('buy_tea') === 'active'`));
@@ -123,11 +123,11 @@ check('接受买茶任务', await ev(`${G}.quests.status('buy_tea') === 'active'
 await ev(`${G}.tryInteract(); 1`);
 await click('.d-opt');
 check('与茶博士再谈推进到买茶', await ev(`${G}.quests.state.buy_tea.objectiveIndex === 1`));
-await setPos(3, 45.6); // 茶摊
+await setPos(2, 44); // 桥南茶摊
 await ev(`${G}.tryInteract(); 1`);
 await click('.d-opt'); // 买一包
 check('真实购买茶叶成功', await ev(`${G}.inventory.has('tea')`), 'coins=' + await ev(`${G}.inventory.coins`));
-await setPos(5.4, -55);
+await setPos(-5, 12);
 await ev(`${G}.tryInteract(); 1`);
 await click('.d-opt'); // 交付
 check('买茶任务完成', await ev(`${G}.quests.isDone('buy_tea')`));
@@ -135,7 +135,7 @@ await click('#settle-ok');
 
 // ---- 13. 目标为交互物（药草）的指引 ----
 await ev(`${G}.quests.accept('herbs'); ${G}.quests.talkTo('daifu'); 1`);
-check('指引指向场景物品(药草)', await ev(`${G}.getGuideTarget()?.x === 9.5`));
+check('指引指向场景物品(药草)', await ev(`${G}.getGuideTarget()?.x === 26`));
 
 // ---- 14. 持续会话稳定性 ----
 await wait(5000);

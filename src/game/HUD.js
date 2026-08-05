@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILDINGS, STALLS, RIVER, BRIDGE, GATE } from '../world/layout.js';
+import { BUILDINGS, STALLS, RIVER, BRIDGE } from '../world/layout.js';
 import { LANDMARKS } from '../data/landmarks.js';
 import { LANTERN_RIDDLES, STORIES } from '../data/minigames.js';
 
@@ -918,9 +918,6 @@ export class HUD {
       const [x, z] = map(s.x, s.z);
       g.fillRect(x - 2, z - 2, 4, 4);
     }
-    // 城门
-    g.fillStyle = '#5a4a3a';
-    g.fillRect(map(-GATE.passageHalf - 6, GATE.z)[0], map(-6, GATE.z)[1], (GATE.passageHalf + 6) * 2 * (S / 150), 3);
     // NPC
     for (const npc of game.npcList) {
       const [x, z] = map(npc.position.x, npc.position.z);

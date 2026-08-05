@@ -3,7 +3,7 @@ import {
   toon, flat, woodTexture, wallTexture, roofTexture,
   bannerTexture, signTexture, doorTexture, windowTexture,
 } from '../render/materials.js';
-import { BUILDINGS, GATE, EXTRA_COLLIDERS } from './layout.js';
+import { BUILDINGS, DOCK, EXTRA_COLLIDERS } from './layout.js';
 import { buildInterior } from './interiors.js';
 import { Merger } from './merge.js';
 
@@ -227,53 +227,17 @@ function buildShop(b) {
   return g;
 }
 
-// 城门楼
-function buildGate(scene) {
-  const g = new THREE.Group();
-  const brick = toon({ color: 0xc9b890, map: wallTexture() });
-  const roofMat = roofM();
-  const half = GATE.passageHalf;
-  const base = new THREE.Mesh(flat(new THREE.BoxGeometry(16, 6, 6)), brick);
-  base.position.set(0, 3, GATE.z);
-  g.add(base);
-  const tunnel = new THREE.Mesh(flat(new THREE.BoxGeometry(half * 2, 4, 7)), toon({ color: 0x4a3a26 }));
-  tunnel.position.set(0, 2, GATE.z);
-  g.add(tunnel);
-  g.add(part(new THREE.BoxGeometry(half * 2 + 0.6, 0.5, 6.6), colMat(), 0, 4.1, GATE.z));
-  // 城楼二层
-  const tower = new THREE.Mesh(flat(new THREE.BoxGeometry(12, 2.6, 5)), wallM());
-  tower.position.set(0, 6 + 1.3, GATE.z);
-  g.add(tower);
-  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-    g.add(part(new THREE.CylinderGeometry(0.14, 0.16, 2.8, 6), colMat(), sx * 5.5, 8.6, GATE.z + sz * 2.2));
-  }
-  const roof = roofMesh(14, 6.6, 1.6, roofMat);
-  roof.position.set(0, 9.8, GATE.z);
-  g.add(roof);
-  g.add(ridgeDecor(14, 1.6, roofMat, 0, 9.8 + 1.6, GATE.z));
-  const plaque = new THREE.Mesh(flat(new THREE.PlaneGeometry(3.4, 0.9)), toon({ map: signTexture('汴京·东水门', 320, 88, '#24443b', '#e8dcb0') }));
-  plaque.position.set(0, 5.0, GATE.z - 3.05);
-  g.add(plaque);
-  // 城墙
-  const wallMat = toon({ color: 0xc0ac80, map: wallTexture() });
-  for (const side of [-1, 1]) {
-    const wall = new THREE.Mesh(flat(new THREE.BoxGeometry(70, 4.2, 2.4)), wallMat);
-    wall.position.set(side * (16 / 2 + 35), 2.1, GATE.z);
-    g.add(wall);
-  }
-  scene.add(g);
-}
-
-// 汴河栈桥（码头）
+// 汴河码头栈桥（北岸东侧，伸向汴河）
 function buildDock(scene) {
   const g = new THREE.Group();
   const deckMat = wood();
-  for (let i = 0; i < 8; i++) {
-    const p = part(new THREE.BoxGeometry(6, 0.2, 0.9), deckMat, 10, 0.32, 16.5 + i * 0.7);
+  const cx = (DOCK.x0 + DOCK.x1) / 2; // 24
+  for (let i = 0; i < 9; i++) {
+    const p = part(new THREE.BoxGeometry(6, 0.2, 0.9), deckMat, cx, 0.32, DOCK.z0 + 1 + i * 0.7);
     g.add(p);
   }
-  for (const [x, z] of [[8.2, 16.8], [11.8, 16.8], [8.2, 20.2], [11.8, 20.2]]) {
-    g.add(part(new THREE.CylinderGeometry(0.14, 0.16, 1.4, 6), darkWood(), x, 0.6, z));
+  for (const [dx, dz] of [[-2.2, DOCK.z0 + 1.2], [2.2, DOCK.z0 + 1.2], [-2.2, DOCK.z1 - 0.6], [2.2, DOCK.z1 - 0.6]]) {
+    g.add(part(new THREE.CylinderGeometry(0.14, 0.16, 1.4, 6), darkWood(), cx + dx, 0.6, dz));
   }
   scene.add(g);
 }
@@ -318,7 +282,6 @@ export function buildBuildings(scene) {
       exitZ: doorZ,
     });
   }
-  buildGate(scene);
-  buildDock(scene);
+  buildDock(scene); // 码头（无城门）
   return interiors;
 }

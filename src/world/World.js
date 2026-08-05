@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildTerrain } from './terrain.js';
+import { buildTerrain, buildMountains } from './terrain.js';
 import { buildRiver } from './river.js';
 import { buildBridge } from './bridge.js';
 import { buildBuildings } from './buildings.js';
@@ -22,9 +22,9 @@ function buildInteractables(scene) {
     leaf.rotation.y = i;
     herbG.add(leaf);
   }
-  herbG.position.set(9.5, 0.45, 18.6); // 抬到栈桥面之上
+  herbG.position.set(26, 0.45, 18.5); // 码头旁北岸
   group.add(herbG);
-  items.push({ id: 'herb', label: '药草', x: 9.5, z: 18.6, group: herbG });
+  items.push({ id: 'herb', label: '药草', x: 26, z: 18.5, group: herbG });
 
   // 布匹（栈桥尽头）
   const clothG = new THREE.Group();
@@ -37,9 +37,9 @@ function buildInteractables(scene) {
     roll.position.set(0, 0.25, (i - 1) * 0.5);
     clothG.add(roll);
   }
-  clothG.position.set(14.2, 0.42, 20.4);
+  clothG.position.set(26, 0.42, 20);
   group.add(clothG);
-  items.push({ id: 'cloth_bundle', label: '布匹', x: 14.2, z: 20.4, group: clothG });
+  items.push({ id: 'cloth_bundle', label: '布匹', x: 26, z: 20, group: clothG });
 
   // P2-4 新增可交互物品：木柴 / 酒坛 / 米袋 / 手稿
   // 木柴（木器摊旁）
@@ -67,9 +67,9 @@ function buildInteractables(scene) {
     jar.add(lid);
     wineG.add(jar);
   }
-  wineG.position.set(13.8, 0.1, -67.5);
+  wineG.position.set(5, 0.1, 3); // 醉仙楼门前
   group.add(wineG);
-  items.push({ id: 'wine_jar', label: '酒坛', x: 13.8, z: -67.5, group: wineG });
+  items.push({ id: 'wine_jar', label: '酒坛', x: 5, z: 3, group: wineG });
 
   // 米袋（米铺门口）
   const riceG = new THREE.Group();
@@ -80,9 +80,9 @@ function buildInteractables(scene) {
     sack.position.set((i - 1) * 0.55, 0.22, 0);
     riceG.add(sack);
   }
-  riceG.position.set(-8.2, 0.1, 9.5);
+  riceG.position.set(-4.5, 0.1, 54); // 米铺门前
   group.add(riceG);
-  items.push({ id: 'rice_sack', label: '米袋', x: -8.2, z: 9.5, group: riceG });
+  items.push({ id: 'rice_sack', label: '米袋', x: -4.5, z: 54, group: riceG });
 
   // 手稿（布庄旁）
   const scriptG = new THREE.Group();
@@ -91,9 +91,9 @@ function buildInteractables(scene) {
   scroll.rotation.x = Math.PI / 2;
   scroll.position.y = 0.15;
   scriptG.add(scroll);
-  scriptG.position.set(-8.6, 0.1, -52.4);
+  scriptG.position.set(5.5, 0.1, 46); // 布庄门前
   group.add(scriptG);
-  items.push({ id: 'script', label: '手稿', x: -8.6, z: -52.4, group: scriptG });
+  items.push({ id: 'script', label: '手稿', x: 5.5, z: 46, group: scriptG });
 
   // P2-1 小玩法场景物：说书棚（听书）/ 花灯（猜谜）/ 竞速舟（赛船）
   // 说书棚醒木台（说书棚）
@@ -132,9 +132,9 @@ function buildInteractables(scene) {
   const flag = new THREE.Mesh(flat(new THREE.BoxGeometry(0.02, 0.5, 0.3)), toon({ color: '#d8402a' }));
   flag.position.set(0, 0.9, 0.75);
   raceG.add(flag);
-  raceG.position.set(16, 0.1, 17); // 避开门前 NPC（毛脚夫/船老大），保证竞速可被交互
+  raceG.position.set(26, 0.1, 17); // 码头旁
   group.add(raceG);
-  items.push({ id: 'raceboat', label: '竞速', x: 16, z: 17, group: raceG });
+  items.push({ id: 'raceboat', label: '竞速', x: 26, z: 17, group: raceG });
 
   // 主线路引（城门内侧，进京赶考用）
   const permitG = new THREE.Group();
@@ -145,9 +145,9 @@ function buildInteractables(scene) {
   pseal.position.set(0, 0.4, 0.08);
   permitG.add(pscroll);
   permitG.add(pseal);
-  permitG.position.set(0.6, 0.1, -86.6);
+  permitG.position.set(0, 0.1, 21.5); // 桥北巡检处（原城门路引迁此）
   group.add(permitG);
-  items.push({ id: 'permit', label: '路引', x: 0.6, z: -86.6, group: permitG });
+  items.push({ id: 'permit', label: '路引', x: 0, z: 21.5, group: permitG });
 
   scene.add(group);
   return items;
@@ -169,7 +169,7 @@ function buildWorldChanges(scene) {
       puff.scale.y = 1.5;
       smoke.add(puff);
     }
-    smoke.position.set(11.5, 3.6, -74.2);
+    smoke.position.set(10, 3.6, 16.5); // 客栈（桥北东）烟囱
     hide(smoke);
     changes.inn_wood = smoke;
   }
@@ -180,7 +180,7 @@ function buildWorldChanges(scene) {
       const sack = new THREE.Mesh(flat(new THREE.SphereGeometry(0.34, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.5)),
         toon({ color: '#c8b088' }));
       sack.scale.y = 1.4;
-      sack.position.set(-13.2 + i * 0.6, 0.24, 9.8);
+      sack.position.set(-13 + i * 0.6, 0.24, 56);
       sacks.add(sack);
     }
     hide(sacks);
@@ -189,9 +189,9 @@ function buildWorldChanges(scene) {
   // 醉仙楼送酒完成 → 码头多一坛酒
   {
     const jar = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.3, 0.22, 0.6, 8)), toon({ color: '#8a4a2a' }));
-    jar.position.set(14.6, 0.32, 20.2);
+    jar.position.set(26, 0.32, 20.5);
     const lid = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.34, 0.34, 0.08, 8)), toon({ color: '#5a3a20' }));
-    lid.position.set(14.6, 0.66, 20.2);
+    lid.position.set(26, 0.66, 20.5);
     const g2 = new THREE.Group();
     g2.add(jar); g2.add(lid);
     hide(g2);
@@ -204,7 +204,7 @@ function buildWorldChanges(scene) {
       const roll = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.2, 0.2, 1.0, 8)),
         toon({ color: ['#e8e0cc', '#5d6f9e'][i] }));
       roll.rotation.x = Math.PI / 2;
-      roll.position.set(-14.4 + i * 0.5, 0.22, -53.2);
+      roll.position.set(6 + i * 0.5, 0.22, 46);
       cloth.add(roll);
     }
     hide(cloth);
@@ -237,6 +237,7 @@ export class World {
   constructor(scene) {
     this.scene = scene;
     buildTerrain(scene);
+    buildMountains(scene); // 远山
     this.river = buildRiver(scene);
     buildBridge(scene);
     this.interiors = buildBuildings(scene); // 可进入店铺（门/内室）

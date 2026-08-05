@@ -100,32 +100,32 @@ if (TEST_PARAMS.get('autostart') === '1') {
     if (TEST_PARAMS.get('t')) g._t = parseFloat(TEST_PARAMS.get('t')); // 设定动画相位
     if (view === 'spawn') {
       g.player._freeCam = false;               // 默认出生视角（第三人称）
-      g.player.px = 0; g.player.pz = -18;
+      g.player.px = 0; g.player.pz = -8;
       g.player.yaw = Math.PI; g.player.pitch = -0.12;
     } else {
       g.player._freeCam = true;
       g.player.px = 0; g.player.pz = 30;
     }
     if (view === 'street') {
-      g.player.px = -18; g.player.pz = 10;            // 集市街头
-      g.camera.position.set(-18, 3.2, 4);
-      g.camera.lookAt(0, 1.2, 12);
+      g.player.px = -10; g.player.pz = 2;             // 桥北西侧街头
+      g.camera.position.set(-13, 3.6, 0);
+      g.camera.lookAt(0, 1.5, 24);
     } else if (view === 'street2') {
-      g.player.px = 0; g.player.pz = -22;             // 主街纵览：店铺两侧+街上行人
-      g.camera.position.set(0, 3.6, -30);
-      g.camera.lookAt(0, 1.4, -68);
+      g.player.px = 0; g.player.pz = 30;              // 桥上纵览两岸
+      g.camera.position.set(0, 5.5, 42);
+      g.camera.lookAt(0, 1.5, 14);
     } else if (view === 'street3') {
-      g.player.px = 0; g.player.pz = -46;             // 斜向主街：两侧店铺 + 行人
-      g.camera.position.set(2.5, 3.0, -44);
-      g.camera.lookAt(-8, 1.6, -58);
+      g.player.px = 0; g.player.pz = 30;              // 桥上斜望南岸店铺
+      g.camera.position.set(10, 5.0, 38);
+      g.camera.lookAt(-8, 1.5, 46);
     } else if (view === 'bridge') {
       g.player.px = 0; g.player.pz = 30;              // 桥上俯瞰河流/船只
       g.camera.position.set(8, 7.5, 36);
       g.camera.lookAt(-14, 1, 20);
     } else if (view === 'shop') {
-      g.player.px = 0; g.player.pz = -55;             // 近看店铺立面
-      g.camera.position.set(3.2, 2.6, -60);
-      g.camera.lookAt(-11, 2.6, -68);
+      g.player.px = 0; g.player.pz = -4;              // 近看桥北店铺
+      g.camera.position.set(3.2, 2.6, -8);
+      g.camera.lookAt(-11, 2.6, 4);
     } else if (view === 'interior') {
       const idx = Math.min(parseInt(TEST_PARAMS.get('idx') || '0', 10) || 0, g.world.interiors.length - 1);
       const int0 = g.world.interiors[idx];
@@ -150,8 +150,8 @@ if (TEST_PARAMS.get('autostart') === '1') {
         g.camera.lookAt(ix - int0.def.w / 2, 1.5, iz); // 看背墙
       }
     } else {
-      g.camera.position.set(0, 82, 58);               // 鸟瞰全景
-      g.camera.lookAt(0, 0, -12);
+      g.camera.position.set(0, 88, 75);               // 鸟瞰全景（桥两岸）
+      g.camera.lookAt(0, 0, 22);
     }
     g.camera.fov = 60; g.camera.updateProjectionMatrix();
     // E2E 实测：?play=1 以正常玩家控制持续运行（不被 40 帧测试截停）
@@ -201,7 +201,7 @@ window.__features = (g) => {
   // 4) 目标为场景交互物（药草）→ 有坐标
   g.quests.accept('herbs'); g.quests.talkTo('daifu');
   const t3 = g.getGuideTarget();
-  out.push('guide3=' + (t3 && Math.hypot(t3.x - 9.5, t3.z - 18.6) < 3 ? 'herb' : 'FAIL'));
+  out.push('guide3=' + (t3 && Math.hypot(t3.x - 26, t3.z - 18.5) < 3 ? 'herb' : 'FAIL'));
   // 5) 指引箭头渲染
   g.hud.updateGuide(g);
   const arrowOn = g.hud.cache.gArrow.style.display === 'flex' || g.hud.cache.gArrow.style.display === 'block';
@@ -789,30 +789,30 @@ window.__probe = (g) => {
   g.scene.traverse(o => { if (o.isMesh && worldVis(o)) { vm++; vt += (o.geometry.attributes.position ? o.geometry.attributes.position.count : 0); } });
   for (const npc of g.npcList) if (worldVis(npc)) npc.traverse(o => { if (o.isMesh) npcM++; });
   parts.push(`visMeshes=${vm} visTris=${vt} visNpcMeshes=${npcM}`);
-  parts.push(sample(20, 0.3, 30, 'river'));
-  parts.push(sample(0, 0.05, -40, 'roadN'));
-  parts.push(sample(11.5, 6.5, -70, 'roof'));
-  parts.push(sample(8.6, 2.5, -70, 'wall'));
+  parts.push(sample(0, 0.3, 30, 'river'));
+  parts.push(sample(0, 0.05, 10, 'roadN'));
+  parts.push(sample(10, 6.5, 3, 'roof'));
+  parts.push(sample(10, 2.5, 3, 'wall'));
   parts.push(sample(0, 6.8, 30, 'bridge'));
   parts.push(sample(-18, 2.0, 6, 'stall'));
-  // 店铺立面细节（view=shop 时可见）
-  parts.push(sample(-9.0, 2.5, -70, 'clinicWall'));
-  parts.push(sample(-11.5, 5.6, -70, 'clinicRoof'));
-  parts.push(sample(-6.9, 1.5, -70, 'clinicBanner'));
-  parts.push(sample(-11.5, 3.3, -70, 'clinicSign'));
-  parts.push(sample(-10.3, 2.6, -70, 'clinicBeam'));
+  // 店铺立面细节（view=shop 时可见，回春堂于桥北西）
+  parts.push(sample(-10.0, 2.5, 6, 'clinicWall'));
+  parts.push(sample(-10, 5.6, 3, 'clinicRoof'));
+  parts.push(sample(-5.5, 2.1, 3, 'clinicBanner'));
+  parts.push(sample(-10, 3.3, 3, 'clinicSign'));
+  parts.push(sample(-10, 2.6, 3, 'clinicBeam'));
   // 屋内探针（view=interior 时可见）
-  parts.push(sample(16.4, 1.5, -70, 'intWall'));
-  parts.push(sample(13, 2.9, -69, 'intCeil'));
-  parts.push(sample(13, 0.1, -69, 'intFloor'));
+  parts.push(sample(-6.4, 1.5, 5, 'intWall'));
+  parts.push(sample(-8, 2.9, 4, 'intCeil'));
+  parts.push(sample(-8, 0.1, 4, 'intFloor'));
   // 门/布幌（view=shop 时可见）
-  parts.push(sample(-6.4, 1.2, -70, 'clinicDoor'));
-  parts.push(sample(-5.8, 2.1, -73.3, 'clinicBanner2'));
+  parts.push(sample(-5.5, 1.2, 3, 'clinicDoor'));
+  parts.push(sample(-5.8, 2.1, 0.5, 'clinicBanner2'));
   // 背墙卷轴/墙面定位（view=interior）
-  parts.push(sample(16.9, 1.6, -67.75, 'scrollN'));
-  parts.push(sample(16.9, 1.6, -72.25, 'scrollS'));
-  parts.push(sample(16.9, 1.6, -70, 'wallMid'));
-  parts.push(sample(16.9, 2.8, -70, 'wallTop'));
+  parts.push(sample(-13.5, 1.6, 5.2, 'scrollN'));
+  parts.push(sample(-13.5, 1.6, 0.8, 'scrollS'));
+  parts.push(sample(-13.5, 1.6, 3, 'wallMid'));
+  parts.push(sample(-13.5, 2.8, 3, 'wallTop'));
   // 反光检测：统计 >244 亮度像素占比；灰色平面：低饱和、中亮度
   try {
     const idata = ctx.getImageData(0, 0, snap.width, snap.height).data;

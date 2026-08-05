@@ -27,16 +27,16 @@ const SHOPKEEPER_DEFS = SHOPKEEPERS.map((sk) => {
 }).filter(Boolean);
 
 export const NPC_DEFS = [
-  // ---- 关键任务 NPC ----
-  n('huolang', '王货郎', 'huolang', 1.5, 16.5, { behavior: 'stand' }),
-  n('tea_stand', '孙婆婆', 'cook', 3, 45.6, { behavior: 'stand' }),
-  n('cha_bo', '茶博士', 'tea', 5.4, -55, { behavior: 'stand' }),             // 茶肆门前
-  n('shuoshuren', '崔说书', 'storyteller', -10, 44, { behavior: 'stand', home: { x: -26, z: 14 }, heading: -1.2 }),
-  n('daifu', '赵大夫', 'doctor', -5.4, -70, { behavior: 'stand' }),          // 药铺门前
-  n('chuanfu', '船老大', 'boatman', 13, 19.5, { behavior: 'stand' }),
-  n('yayi', '衙役刘三', 'yamen', -1.2, -88.2, { behavior: 'stand' }),
-  n('shoujiang', '守将韩威', 'general', 3.2, -88.5, { behavior: 'stand', heading: 0 }),
-  n('buzhuang', '沈掌柜', 'weaver', -5.2, -55, { behavior: 'stand' }),       // 布庄门前
+  // ---- 关键任务 NPC（新布局：桥两岸） ----
+  n('huolang', '王货郎', 'huolang', 0, 16, { behavior: 'stand' }),            // 桥北头
+  n('tea_stand', '孙婆婆', 'cook', 2, 44, { behavior: 'stand' }),              // 桥南茶摊
+  n('cha_bo', '茶博士', 'tea', -5, 12, { behavior: 'stand' }),                 // 茶肆门前
+  n('shuoshuren', '崔说书', 'storyteller', -22, 13, { behavior: 'stand', home: { x: -26, z: 14 }, heading: -1.2 }),
+  n('daifu', '赵大夫', 'doctor', -4.5, 3, { behavior: 'stand' }),              // 药铺门前
+  n('chuanfu', '船老大', 'boatman', 24, 19, { behavior: 'stand' }),            // 码头
+  n('yayi', '衙役刘三', 'yamen', -1, 20, { behavior: 'stand' }),               // 桥北巡检
+  n('shoujiang', '守将韩威', 'general', 2, 20.5, { behavior: 'stand', heading: 0 }),
+  n('buzhuang', '沈掌柜', 'weaver', 4, 46, { behavior: 'stand' }),             // 布庄门前
   n('tangren', '糖人张', 'vendor', -17.6, 5.6, { behavior: 'stand' }),
 
   // ---- 街市群像 ----

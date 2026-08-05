@@ -3,7 +3,8 @@ import { rand, rf } from '../core/rand.js';
 
 export const RIVER = { zMin: 23, zMax: 37, y: 0.3, halfW: 200 };
 export const BRIDGE = { z0: 18, z1: 42, halfW: 4.8, peak: 6.8 };
-export const GATE = { z: -92, passageHalf: 3.5, wallHalf: 80 };
+// 码头（北岸东侧，伸向汴河）
+export const DOCK = { x0: 21, x1: 29, z0: 15.5, z1: 22 };
 
 // 虹桥弧线：给定 z → 桥面高度（两端 0，中拱 6.8）
 export function bridgeHeightAt(z) {
@@ -12,9 +13,9 @@ export function bridgeHeightAt(z) {
   return BRIDGE.peak * Math.pow(Math.sin(Math.PI * t), 1.05);
 }
 
-// 全局地面高度（含虹桥与栈桥）
+// 全局地面高度（含虹桥与码头栈桥）
 export function groundHeight(x, z) {
-  if (z >= 15.5 && z <= 21 && x >= 7 && x <= 18) return 0.42; // 栈桥
+  if (x >= DOCK.x0 && x <= DOCK.x1 && z >= DOCK.z0 && z <= DOCK.z1) return 0.42; // 码头栈桥
   if (Math.abs(x) <= BRIDGE.halfW && z >= BRIDGE.z0 && z <= BRIDGE.z1) {
     return bridgeHeightAt(z);
   }
@@ -23,28 +24,27 @@ export function groundHeight(x, z) {
 
 // 脚底材质（P1-2 脚步音色）：wood 木板 / soft 草地 / stone 石板
 export function groundType(x, z) {
-  if (z >= 15.5 && z <= 21 && x >= 7 && x <= 18) return 'wood'; // 栈桥
+  if (x >= DOCK.x0 && x <= DOCK.x1 && z >= DOCK.z0 && z <= DOCK.z1) return 'wood'; // 码头栈桥
   if (Math.abs(x) <= BRIDGE.halfW && z >= BRIDGE.z0 && z <= BRIDGE.z1) return 'wood'; // 虹桥
   if (z > 20 && z < 40) return 'soft'; // 河岸草地
   return 'stone';
 }
 
 // ============================ 店铺数据 ============================
+// 新布局：建筑分列拱桥两岸（各 5 家，共 10 家），河流保留、无城门
 export const BUILDINGS = [
-  // 北街东侧
-  { id: 'tavern',  name: '醉仙楼',   sign: '醉仙楼', x: 11.5, z: -70, w: 11, d: 9,  banner: '酒', bannerColor: '#b8402a' },
-  { id: 'tea',     name: '清风茶肆', sign: '清风茶肆', x: 11.5, z: -55, w: 10, d: 8,  banner: '茶', bannerColor: '#2f6d4f' },
-  { id: 'inn',     name: '悦来客栈', sign: '悦来客栈', x: 11.5, z: -40, w: 12, d: 10, banner: '宿', bannerColor: '#b07c36' },
-  // 北街西侧
-  { id: 'clinic',  name: '回春堂',   sign: '回春堂', x: -11.5, z: -70, w: 10, d: 8,  banner: '药', bannerColor: '#8a4a3a' },
-  { id: 'cloth',   name: '锦绣布庄', sign: '锦绣布庄', x: -11.5, z: -55, w: 11, d: 9,  banner: '布', bannerColor: '#3c7a82' },
-  { id: 'incense', name: '宝香斋',   sign: '宝香斋', x: -11.5, z: -40, w: 9,  d: 8,  banner: '香', bannerColor: '#a86e54' },
-  // 中街东侧
-  { id: 'general', name: '百杂铺',   sign: '百杂铺', x: 11, z: -6, w: 10, d: 8,  banner: '杂', bannerColor: '#6e8a4f' },
-  { id: 'snack',   name: '桂香点心', sign: '桂香点心', x: 11, z: 7,  w: 9,  d: 7,  banner: '食', bannerColor: '#b0622f' },
-  // 中街西侧
-  { id: 'butcher', name: '张记肉铺', sign: '张记肉铺', x: -11, z: -6, w: 9,  d: 7,  banner: '肉', bannerColor: '#b04a4a' },
-  { id: 'rice',    name: '丰源米铺', sign: '丰源米铺', x: -11, z: 7,  w: 10, d: 8,  banner: '米', bannerColor: '#8a6d3b' },
+  // 北岸（桥北，z < 18）
+  { id: 'clinic',  name: '回春堂',   sign: '回春堂', x: -10, z: 3,  w: 9,  d: 7,  banner: '药', bannerColor: '#8a4a3a' },
+  { id: 'tavern',  name: '醉仙楼',   sign: '醉仙楼', x: 10,  z: 3,  w: 10, d: 8,  banner: '酒', bannerColor: '#b8402a' },
+  { id: 'tea',     name: '清风茶肆', sign: '清风茶肆', x: -10, z: 11, w: 9,  d: 7,  banner: '茶', bannerColor: '#2f6d4f' },
+  { id: 'inn',     name: '悦来客栈', sign: '悦来客栈', x: 10,  z: 12, w: 11, d: 9,  banner: '宿', bannerColor: '#b07c36' },
+  { id: 'general', name: '百杂铺',   sign: '百杂铺', x: -10, z: 18, w: 9,  d: 7,  banner: '杂', bannerColor: '#6e8a4f' },
+  // 南岸（桥南，z > 42）
+  { id: 'cloth',   name: '锦绣布庄', sign: '锦绣布庄', x: 10,  z: 46, w: 10, d: 8,  banner: '布', bannerColor: '#3c7a82' },
+  { id: 'butcher', name: '张记肉铺', sign: '张记肉铺', x: -10, z: 46, w: 9,  d: 7,  banner: '肉', bannerColor: '#b04a4a' },
+  { id: 'snack',   name: '桂香点心', sign: '桂香点心', x: 10,  z: 54, w: 9,  d: 7,  banner: '食', bannerColor: '#b0622f' },
+  { id: 'rice',    name: '丰源米铺', sign: '丰源米铺', x: -10, z: 54, w: 10, d: 8,  banner: '米', bannerColor: '#8a6d3b' },
+  { id: 'incense', name: '宝香斋',   sign: '宝香斋', x: -10, z: 62, w: 9,  d: 7,  banner: '香', bannerColor: '#a86e54' },
 ];
 
 // 运行时填充：店铺墙（带门洞）+ 室内家具 —— 由 buildings/interiors 注册
@@ -59,7 +59,7 @@ export const STALLS = [
   { id: 'carpenter', x: -16, z: 16, label: '木器摊' },
   { id: 'divine',    x: -28, z: 20, label: '卦摊' },
   { id: 'cool',      x: -8,  z: 20, label: '凉粉摊' },
-  { id: 'tea_stand', x: 3,   z: 46, label: '桥头茶摊' },
+  { id: 'tea_stand', x: 2,   z: 44, label: '桥南茶摊' },
   { id: 'fruit',     x: -10, z: 48, label: '果摊' },
   { id: 'fish',      x: -20, z: 52, label: '鱼摊' },
 ];
@@ -73,27 +73,35 @@ export const TREES = [];
 function treeSeed(x, z, r = 1.6) {
   TREES.push({ x, z, r, kind: rand() < 0.55 ? 'willow' : 'pine' });
 }
+// 避开建筑占地与码头（新布局：建筑在桥两岸 x±10）
+const inBuildOrDock = (x, z) => {
+  for (const b of BUILDINGS) {
+    if (Math.abs(x - b.x) < b.w / 2 + 2 && Math.abs(z - b.z) < b.d / 2 + 2) return true;
+  }
+  if (x >= DOCK.x0 - 2 && x <= DOCK.x1 + 2 && z >= DOCK.z0 - 2 && z <= DOCK.z1 + 2) return true;
+  return false;
+};
 // 北岸柳行
-for (let x = -60; x <= 60; x += 6) {
+for (let x = -70; x <= 70; x += 6) {
   if (Math.abs(x) < 9) continue;         // 避开桥
   const tx = x + rf(-0.8, 0.8);
   const tz = 19.2 + rf(-1, 1);
-  if (tx > 6.5 && tx < 18.5 && tz > 15 && tz < 21.5) continue; // 栈桥区域不留树
+  if (inBuildOrDock(tx, tz)) continue;
   treeSeed(tx, tz);
 }
 // 南岸柳行
-for (let x = -60; x <= 50; x += 7) {
+for (let x = -70; x <= 60; x += 7) {
   if (Math.abs(x) < 9) continue;
-  treeSeed(x + rf(-0.8, 0.8), 40.6 + rf(-1, 1));
+  const tx = x + rf(-0.8, 0.8);
+  const tz = 40.6 + rf(-1, 1);
+  if (inBuildOrDock(tx, tz)) continue;
+  treeSeed(tx, tz);
 }
 // 集市外围
 treeSeed(-34, 6); treeSeed(-32, 16); treeSeed(-24, -8); treeSeed(-18, -10); treeSeed(-8, 24);
-// 南街两侧
-for (let z = 50; z <= 100; z += 8) {
-  treeSeed(6.5, z); treeSeed(-6.5, z + 3);
-}
-// 北街外围
-treeSeed(20, -78); treeSeed(-19, -80); treeSeed(20, -50); treeSeed(-19, -52);
+// 南北郊外
+for (let z = -30; z >= -90; z -= 12) { treeSeed(20, z); treeSeed(-20, z + 4); }
+for (let z = 66; z <= 100; z += 10) { treeSeed(18, z); treeSeed(-18, z + 4); }
 
 export const treeColliders = TREES.map(t => ({ x: t.x, z: t.z, r: t.r + 0.4 }));
 
@@ -104,11 +112,6 @@ export function collides(x, z) {
   // 汴河（虹桥桥面通行）
   if (z >= RIVER.zMin && z <= RIVER.zMax) {
     if (Math.abs(x) <= BRIDGE.halfW && z >= BRIDGE.z0 && z <= BRIDGE.z1) return false;
-    return true;
-  }
-  // 城墙
-  if (z >= GATE.z - 2.5 && z <= GATE.z + 2.5) {
-    if (Math.abs(x) <= GATE.passageHalf) return false;
     return true;
   }
   // 店铺墙（带门洞） + 室内家具
