@@ -192,8 +192,8 @@ export class Character extends THREE.Group {
 
       if (hair === 'topknot') {            // 男子束发（插簪）
         bun(0, headR * 0.78, H * 0.045);
-        if (this.app.crown) {
-          // 翩翩公子：束发玉冠（金环束发 + 顶珠）
+        if (this.app.crown && hat === 'none') {
+          // 束发玉冠（金环束发 + 顶珠）——仅无帽时
           const ring = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.058, H * 0.058, H * 0.038, 12), gold);
           ring.position.y = headR * 0.58;
           this.headGroup.add(ring);
@@ -232,12 +232,13 @@ export class Character extends THREE.Group {
       band.position.y = headR * 0.16;
       this.headGroup.add(band);
     } else if (hat === 'dongpo') {
-      // 东坡巾：软方帽 + 帽缘横带
-      const square = new THREE.Mesh(flat(new THREE.BoxGeometry(headR * 1.5, H * 0.13, headR * 1.5)), darkMat);
-      square.position.y = headR * 0.58;
-      this.headGroup.add(square);
-      const band = new THREE.Mesh(flat(new THREE.BoxGeometry(headR * 1.7, H * 0.026, headR * 1.7)), toon({ color: 0x3a3226 }));
-      band.position.y = headR * 0.14;
+      // 东坡巾（书生方巾帽）：上窄下宽的方柱 + 额带，圆头上显轮廓
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(headR * 1.1, headR * 1.5, H * 0.13, 4), darkMat);
+      cap.rotation.y = Math.PI / 4;
+      cap.position.y = headR * 0.52;
+      this.headGroup.add(cap);
+      const band = new THREE.Mesh(flat(new THREE.BoxGeometry(headR * 1.62, H * 0.026, headR * 1.62)), toon({ color: 0x3a3226 }));
+      band.position.y = headR * 0.16;
       this.headGroup.add(band);
     } else if (hat === 'jin') {
       // 布巾：裹头圆筒
