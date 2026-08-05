@@ -1,7 +1,7 @@
 # 《汴京漫游》迭代记录
 
 > 覆盖：初始构建 → 玩法完善 → 性能优化 → 移动端适配 → 大规模 Bug 修复 → 发布打磨 → 人物美化 → 汉服化 → 江湖风 → 书生帽子
-> 最新提交：`书生帽调校`（东坡巾软圆帽 · 头型卵形）
+> 最新提交：`bdb1da5`（书生帽调校：东坡巾软圆帽 · 头型卵形）
 
 ## 阶段一：初始构建与部署
 
@@ -238,7 +238,7 @@
 
 | 提交 | 内容 |
 |---|---|
-| `书生帽` | 用户反馈主角"光圆坨头难看"，先试玉冠仍像圆球，遂戴**东坡巾**。初版用硬方柱（CylinderGeometry 4 段）像**铁盆** → 改**软圆角方帽**（RoundedBoxGeometry 比头略宽 1.22×、圆角、微斜 0.05rad、额带），**头型**从正圆 → **略卵形**（scale y 1.05 / z 0.98）更接近真人。修一处真 bug：东坡巾误写 `THREE.RoundedBoxGeometry`（该构造器为具名导入，非 THREE 命名空间）→ 运行时报 `(void 0) is not a constructor` 误触发 WebGL 兼容页，改回 `RoundedBoxGeometry`。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
+| `bdb1da5` | 用户反馈主角"光圆坨头难看"，先试玉冠仍像圆球，遂戴**东坡巾**。初版用硬方柱（CylinderGeometry 4 段）像**铁盆** → 改**软圆角方帽**（RoundedBoxGeometry 比头略宽 1.22×、圆角、微斜 0.05rad、额带），**头型**从正圆 → **略卵形**（scale y 1.05 / z 0.98）更接近真人。修一处真 bug：东坡巾误写 `THREE.RoundedBoxGeometry`（该构造器为具名导入，非 THREE 命名空间）→ 运行时报 `(void 0) is not a constructor` 误触发 WebGL 兼容页，改回 `RoundedBoxGeometry`。selftest/features/qa 全过，E2E 桌面 33/手机 14 全过，0 控制台错误 |
 
 ## 经验教训（后续开发必读）
 
