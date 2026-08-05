@@ -80,12 +80,14 @@ export function generateAppearance(role = 'guest', seed = 0) {
   };
 }
 
-// 玩家外观：一位进京赶考的书生（东坡巾 · 青衫直裰）
+// 玩家外观：一位进京赶考的书生（东坡巾 · 青衫直裰 · 高挑修长）
 export function playerAppearance() {
   const app = generateAppearance('scholar', 20260802);
   app.hat = 'dongpo';                   // 书生方巾帽
   app.crown = false;
   app.hairStyle = 'topknot';
+  app.height = 1.84;                    // 个子高挑（较常人高）
+  app.girth = 0.88;                     // 身形清瘦（腰细）
   app.cloth = 0x3a5a8a;
   app.trim = 0xe8dcb0;
   app.faceCfg.skin = '#e8b98a';

@@ -67,16 +67,16 @@ export class Character extends THREE.Group {
       sash.position.y = H * 0.15;
       this.body.add(sash);
     } else {
-      // 直裰长袍：修身合体（肩略宽→腰收→摆微展），翩翩公子般挺拔
+      // 直裰长袍：修身合体（肩→细腰→摆微展），高挑修长
       const robe = new THREE.Mesh(new THREE.LatheGeometry([
-        new THREE.Vector2(H * 0.16 * g, H * 0.38),   // 肩
-        new THREE.Vector2(H * 0.138 * g, H * 0.12),  // 腰（收束显身段）
-        new THREE.Vector2(H * 0.15 * g, -H * 0.14),  // 胯
-        new THREE.Vector2(H * 0.175 * g, -H * 0.38), // 摆（微展，行走飘动）
+        new THREE.Vector2(H * 0.155 * g, H * 0.38),  // 肩
+        new THREE.Vector2(H * 0.126 * g, H * 0.12),  // 腰（细收，显身段）
+        new THREE.Vector2(H * 0.148 * g, -H * 0.14), // 胯
+        new THREE.Vector2(H * 0.172 * g, -H * 0.38), // 摆（微展，行走飘动）
       ], 16), clothMat);
       this.body.add(robe);
       // 腰带（空心环，只外圈一圈，非实心）
-      const sash = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.142 * g, H * 0.142 * g, H * 0.04, 16, 1, true), trimMat);
+      const sash = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.13 * g, H * 0.13 * g, H * 0.04, 16, 1, true), trimMat);
       sash.position.y = H * 0.10;
       this.body.add(sash);
     }
