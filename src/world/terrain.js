@@ -68,8 +68,8 @@ export function buildSky(scene) {
     return new THREE.CanvasTexture(c);
   })();
   const sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTex, transparent: true, opacity: 0, depthWrite: false, fog: false }));
-  sun.scale.set(36, 36, 1);
-  sun.position.set(95, 152, 60); // 沿日照方向高空
+  sun.scale.set(34, 34, 1);
+  sun.position.set(44, 27, 118); // 出生默认朝南时，右上天空清晰可见（约 12° 仰角）
   group.add(sun);
 
   // 月亮（冷白光 + 月牙阴影）
@@ -86,20 +86,20 @@ export function buildSky(scene) {
     return new THREE.CanvasTexture(c);
   })();
   const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonTex, transparent: true, opacity: 0, depthWrite: false, fog: false }));
-  moon.scale.set(22, 22, 1);
-  moon.position.set(-120, 168, -70);
+  moon.scale.set(20, 20, 1);
+  moon.position.set(-108, 55, -82); // 中低空，平视可见
   group.add(moon);
 
-  // 星星（穹顶点云，夜晚浮现）
-  const N = 260;
+  // 星星（穹顶点云，夜晚浮现；偏中低空使平视可见）
+  const N = 300;
   const pos = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) {
     const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(0.3 + Math.random() * 0.7); // 上方穹顶
+    const elev = (5 + Math.random() * 68) * Math.PI / 180; // 仰角 5°~73°
     const r = 230;
-    pos[i * 3] = Math.sin(phi) * Math.cos(theta) * r;
-    pos[i * 3 + 1] = Math.cos(phi) * r + 10;
-    pos[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * r;
+    pos[i * 3] = Math.cos(elev) * Math.cos(theta) * r;
+    pos[i * 3 + 1] = Math.sin(elev) * r + 8;
+    pos[i * 3 + 2] = Math.cos(elev) * Math.sin(theta) * r;
   }
   const starGeo = new THREE.BufferGeometry();
   starGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
