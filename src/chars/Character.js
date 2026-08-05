@@ -115,6 +115,7 @@ export class Character extends THREE.Group {
     this.headGroup = new THREE.Group();
     this.headGroup.position.y = headCenter;
     // 蛋形头（Lathe 轮廓）：顶高冠圆、颧最宽、下颌下巴收窄 —— 长而椭圆，非正圆
+    // 材质双面：单面壳的冠部法线朝外下，俯视时被剔除→头顶透明透出五官；双面保证任意角度实心
     const head = new THREE.Mesh(new THREE.LatheGeometry([
       new THREE.Vector2(headR * 0.05, headR * 1.45),   // 顶（圆润收拢）
       new THREE.Vector2(headR * 0.60, headR * 1.15),   // 冠
@@ -123,7 +124,7 @@ export class Character extends THREE.Group {
       new THREE.Vector2(headR * 0.85, headR * -0.35),  // 下颌
       new THREE.Vector2(headR * 0.50, headR * -0.70),  // 颊
       new THREE.Vector2(headR * 0.12, headR * -0.95),  // 下巴（收窄）
-    ], 16), toon({ map: this.app.faceTex }));
+    ], 16), toon({ map: this.app.faceTex, side: THREE.DoubleSide }));
     // Lathe UV 与胶囊同：正脸在 u=0 → 偏移 0.25，使脸贴图正脸带对准 +Z
     const hUv = head.geometry.attributes.uv;
     for (let i = 0; i < hUv.count; i++) hUv.setX(i, (hUv.getX(i) + 0.25) % 1);

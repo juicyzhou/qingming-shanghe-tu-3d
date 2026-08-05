@@ -296,13 +296,13 @@ export function faceTexture(cfg = {}) {
   g.fillStyle = skin;
   g.fillRect(0, 0, s, s);
 
-  // 发际阴影（衔接顶上的发帽）：顶部渐变压暗
+  // 发际阴影（衔接顶上的发帽）：仅画在前脸带（头背纯肤，避免背后露"面痕"）
   const fringe = g.createLinearGradient(0, 0, 0, s * 0.34);
   fringe.addColorStop(0, shade(skin, -0.14));
   fringe.addColorStop(0.5, shade(skin, -0.05));
   fringe.addColorStop(1, skin);
   g.fillStyle = fringe;
-  g.fillRect(0, 0, s, s * 0.34);
+  g.fillRect(0, 0, s / 2, s * 0.34);
 
   const cx = s * 0.25; // 球面正脸中心
   g.lineCap = 'round';
