@@ -26,9 +26,9 @@ export function buildTerrain(scene) {
   bankS.position.set(-40, 0.02, RIVER.zMax + 3);
   group.add(bankS);
 
-  // ---- 主街石板路：北岸段 + 南岸段（由虹桥连接） ----
+  // ---- 主街石板路：北岸段 + 南岸段（由虹桥连接，路面加宽至 13） ----
   const roadMat = toon({ color: 0xcfc0a2, map: roadTexture() });
-  const roadGeo = flat(new THREE.PlaneGeometry(9, 1));
+  const roadGeo = flat(new THREE.PlaneGeometry(13, 1));
   function addRoad(cx, cz, len) {
     const r = new THREE.Mesh(roadGeo, roadMat);
     r.rotation.x = -Math.PI / 2;

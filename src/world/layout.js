@@ -2,7 +2,7 @@
 import { rand, rf } from '../core/rand.js';
 
 export const RIVER = { zMin: 23, zMax: 37, y: 0.3, halfW: 200 };
-export const BRIDGE = { z0: 18, z1: 42, halfW: 4.8, peak: 6.8 };
+export const BRIDGE = { z0: 18, z1: 42, halfW: 6.5, peak: 6.8 }; // 加宽至与马路一致（13）
 // 码头（北岸东侧，伸向汴河）
 export const DOCK = { x0: 21, x1: 29, z0: 15.5, z1: 22 };
 
@@ -31,20 +31,20 @@ export function groundType(x, z) {
 }
 
 // ============================ 店铺数据 ============================
-// 新布局：建筑分列拱桥两岸（各 5 家，共 10 家），河流保留、无城门
+// 松散布局：建筑分列拱桥两岸（各 5 家），马路更宽、楼间距拉大、间隙种树
 export const BUILDINGS = [
-  // 北岸（桥北，z < 18）
-  { id: 'clinic',  name: '回春堂',   sign: '回春堂', x: -10, z: 3,  w: 9,  d: 7,  banner: '药', bannerColor: '#8a4a3a' },
-  { id: 'tavern',  name: '醉仙楼',   sign: '醉仙楼', x: 10,  z: 3,  w: 10, d: 8,  banner: '酒', bannerColor: '#b8402a' },
-  { id: 'tea',     name: '清风茶肆', sign: '清风茶肆', x: -10, z: 11, w: 9,  d: 7,  banner: '茶', bannerColor: '#2f6d4f' },
-  { id: 'inn',     name: '悦来客栈', sign: '悦来客栈', x: 10,  z: 12, w: 11, d: 9,  banner: '宿', bannerColor: '#b07c36' },
-  { id: 'general', name: '百杂铺',   sign: '百杂铺', x: -10, z: 18, w: 9,  d: 7,  banner: '杂', bannerColor: '#6e8a4f' },
-  // 南岸（桥南，z > 42）
-  { id: 'cloth',   name: '锦绣布庄', sign: '锦绣布庄', x: 10,  z: 46, w: 10, d: 8,  banner: '布', bannerColor: '#3c7a82' },
-  { id: 'butcher', name: '张记肉铺', sign: '张记肉铺', x: -10, z: 46, w: 9,  d: 7,  banner: '肉', bannerColor: '#b04a4a' },
-  { id: 'snack',   name: '桂香点心', sign: '桂香点心', x: 10,  z: 54, w: 9,  d: 7,  banner: '食', bannerColor: '#b0622f' },
-  { id: 'rice',    name: '丰源米铺', sign: '丰源米铺', x: -10, z: 54, w: 10, d: 8,  banner: '米', bannerColor: '#8a6d3b' },
-  { id: 'incense', name: '宝香斋',   sign: '宝香斋', x: -10, z: 62, w: 9,  d: 7,  banner: '香', bannerColor: '#a86e54' },
+  // 北岸（桥北，z < 18；两排、留出间隙）
+  { id: 'clinic',  name: '回春堂',   sign: '回春堂', x: -14, z: 4,  w: 9,  d: 7,  banner: '药', bannerColor: '#8a4a3a' },
+  { id: 'tavern',  name: '醉仙楼',   sign: '醉仙楼', x: 14,  z: 4,  w: 10, d: 8,  banner: '酒', bannerColor: '#b8402a' },
+  { id: 'tea',     name: '清风茶肆', sign: '清风茶肆', x: -14, z: 14, w: 9,  d: 7,  banner: '茶', bannerColor: '#2f6d4f' },
+  { id: 'inn',     name: '悦来客栈', sign: '悦来客栈', x: 14,  z: 15, w: 11, d: 9,  banner: '宿', bannerColor: '#b07c36' },
+  { id: 'general', name: '百杂铺',   sign: '百杂铺', x: -14, z: 24, w: 9,  d: 7,  banner: '杂', bannerColor: '#6e8a4f' },
+  // 南岸（桥南，z > 42；两排、留出间隙）
+  { id: 'cloth',   name: '锦绣布庄', sign: '锦绣布庄', x: 14,  z: 44, w: 10, d: 8,  banner: '布', bannerColor: '#3c7a82' },
+  { id: 'butcher', name: '张记肉铺', sign: '张记肉铺', x: -14, z: 44, w: 9,  d: 7,  banner: '肉', bannerColor: '#b04a4a' },
+  { id: 'snack',   name: '桂香点心', sign: '桂香点心', x: 14,  z: 56, w: 9,  d: 7,  banner: '食', bannerColor: '#b0622f' },
+  { id: 'rice',    name: '丰源米铺', sign: '丰源米铺', x: -14, z: 56, w: 10, d: 8,  banner: '米', bannerColor: '#8a6d3b' },
+  { id: 'incense', name: '宝香斋',   sign: '宝香斋', x: -14, z: 68, w: 9,  d: 7,  banner: '香', bannerColor: '#a86e54' },
 ];
 
 // 运行时填充：店铺墙（带门洞）+ 室内家具 —— 由 buildings/interiors 注册
@@ -102,6 +102,16 @@ treeSeed(-34, 6); treeSeed(-32, 16); treeSeed(-24, -8); treeSeed(-18, -10); tree
 // 南北郊外
 for (let z = -30; z >= -90; z -= 12) { treeSeed(20, z); treeSeed(-20, z + 4); }
 for (let z = 66; z <= 100; z += 10) { treeSeed(18, z); treeSeed(-18, z + 4); }
+// 建筑间隙装饰树（北岸两排之间 + 沿路两侧 + 南岸两排之间）
+const gapTrees = [
+  [-18, 9], [-19, 19], [18, 9], [19, 19],      // 北岸：楼后与楼间
+  [-17, 14.5], [17, 11], [-8, 21], [8, 21],    // 北岸：路侧与桥头
+  [-18, 50], [-18, 62], [18, 50], [18, 62],    // 南岸：楼后与楼间
+  [-17, 56], [17, 44], [-8, 40], [8, 40],      // 南岸：路侧
+];
+for (const [tx, tz] of gapTrees) {
+  if (!inBuildOrDock(tx, tz)) treeSeed(tx + rf(-0.6, 0.6), tz + rf(-0.6, 0.6));
+}
 
 export const treeColliders = TREES.map(t => ({ x: t.x, z: t.z, r: t.r + 0.4 }));
 

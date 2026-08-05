@@ -30,23 +30,23 @@ export const NPC_DEFS = [
   // ---- 关键任务 NPC（新布局：桥两岸） ----
   n('huolang', '王货郎', 'huolang', 0, 16, { behavior: 'stand' }),            // 桥北头
   n('tea_stand', '孙婆婆', 'cook', 2, 44, { behavior: 'stand' }),              // 桥南茶摊
-  n('cha_bo', '茶博士', 'tea', -5, 12, { behavior: 'stand' }),                 // 茶肆门前
+  n('cha_bo', '茶博士', 'tea', -10, 14, { behavior: 'stand' }),                // 茶肆门前
   n('shuoshuren', '崔说书', 'storyteller', -22, 13, { behavior: 'stand', home: { x: -26, z: 14 }, heading: -1.2 }),
-  n('daifu', '赵大夫', 'doctor', -4.5, 3, { behavior: 'stand' }),              // 药铺门前
+  n('daifu', '赵大夫', 'doctor', -10, 4, { behavior: 'stand' }),               // 药铺门前
   n('chuanfu', '船老大', 'boatman', 24, 19, { behavior: 'stand' }),            // 码头
   n('yayi', '衙役刘三', 'yamen', -1, 20, { behavior: 'stand' }),               // 桥北巡检
   n('shoujiang', '守将韩威', 'general', 2, 20.5, { behavior: 'stand', heading: 0 }),
-  n('buzhuang', '沈掌柜', 'weaver', 4, 46, { behavior: 'stand' }),             // 布庄门前
+  n('buzhuang', '沈掌柜', 'weaver', 9, 44, { behavior: 'stand' }),             // 布庄门前
   n('tangren', '糖人张', 'vendor', -17.6, 5.6, { behavior: 'stand' }),
 
-  // ---- 街市群像（两岸） ----
-  n('', '张铁柱', 'waiter', 5, 9),        // 北岸·醉仙楼旁
-  n('', '李阿贵', 'waiter', -6, 13),      // 北岸·茶肆旁
+  // ---- 街市群像（两岸，随松散布局外移） ----
+  n('', '张铁柱', 'waiter', 10, 8),       // 北岸·醉仙楼旁
+  n('', '李阿贵', 'waiter', -10, 16),     // 北岸·茶肆旁
   n('', '钱掌柜', 'guest', -7, 20),       // 桥北头
-  n('', '孙二娘', 'woman', 6, 47),        // 南岸·布庄旁
-  n('', '赵大郎', 'guest', -6, 50, { behavior: 'wander' }),  // 南岸·肉铺旁
+  n('', '孙二娘', 'woman', 10, 47),       // 南岸·布庄旁
+  n('', '赵大郎', 'guest', -10, 47, { behavior: 'wander' }),  // 南岸·肉铺旁
   n('', '周五郎', 'porter', 22, 16),      // 码头
-  n('', '郑三嫂', 'cook', -7, 45),        // 南岸·桥南
+  n('', '郑三嫂', 'cook', -7, 47),        // 南岸·桥南
   n('', '吴秀才', 'scholar', 3, 20, { behavior: 'wander' }),  // 桥北头
   n('', '冯四哥', 'guest', 2, 0, { behavior: 'wander' }),
   n('', '陈婆婆', 'woman', -2, 2),

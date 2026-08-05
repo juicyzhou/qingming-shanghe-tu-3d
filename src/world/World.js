@@ -67,9 +67,9 @@ function buildInteractables(scene) {
     jar.add(lid);
     wineG.add(jar);
   }
-  wineG.position.set(5, 0.1, 3); // 醉仙楼门前
+  wineG.position.set(9, 0.1, 4); // 醉仙楼门前
   group.add(wineG);
-  items.push({ id: 'wine_jar', label: '酒坛', x: 5, z: 3, group: wineG });
+  items.push({ id: 'wine_jar', label: '酒坛', x: 9, z: 4, group: wineG });
 
   // 米袋（米铺门口）
   const riceG = new THREE.Group();
@@ -80,9 +80,9 @@ function buildInteractables(scene) {
     sack.position.set((i - 1) * 0.55, 0.22, 0);
     riceG.add(sack);
   }
-  riceG.position.set(-4.5, 0.1, 54); // 米铺门前
+  riceG.position.set(-9, 0.1, 56); // 米铺门前
   group.add(riceG);
-  items.push({ id: 'rice_sack', label: '米袋', x: -4.5, z: 54, group: riceG });
+  items.push({ id: 'rice_sack', label: '米袋', x: -9, z: 56, group: riceG });
 
   // 手稿（布庄旁）
   const scriptG = new THREE.Group();
@@ -91,9 +91,9 @@ function buildInteractables(scene) {
   scroll.rotation.x = Math.PI / 2;
   scroll.position.y = 0.15;
   scriptG.add(scroll);
-  scriptG.position.set(5.5, 0.1, 46); // 布庄门前
+  scriptG.position.set(9.5, 0.1, 44); // 布庄门前
   group.add(scriptG);
-  items.push({ id: 'script', label: '手稿', x: 5.5, z: 46, group: scriptG });
+  items.push({ id: 'script', label: '手稿', x: 9.5, z: 44, group: scriptG });
 
   // P2-1 小玩法场景物：说书棚（听书）/ 花灯（猜谜）/ 竞速舟（赛船）
   // 说书棚醒木台（说书棚）
@@ -169,7 +169,7 @@ function buildWorldChanges(scene) {
       puff.scale.y = 1.5;
       smoke.add(puff);
     }
-    smoke.position.set(10, 3.6, 16.5); // 客栈（桥北东）烟囱
+    smoke.position.set(14, 3.6, 19.5); // 客栈（桥北东）烟囱
     hide(smoke);
     changes.inn_wood = smoke;
   }
@@ -180,7 +180,7 @@ function buildWorldChanges(scene) {
       const sack = new THREE.Mesh(flat(new THREE.SphereGeometry(0.34, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.5)),
         toon({ color: '#c8b088' }));
       sack.scale.y = 1.4;
-      sack.position.set(-13 + i * 0.6, 0.24, 56);
+      sack.position.set(-16.5 + i * 0.6, 0.24, 58);
       sacks.add(sack);
     }
     hide(sacks);
@@ -204,7 +204,7 @@ function buildWorldChanges(scene) {
       const roll = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.2, 0.2, 1.0, 8)),
         toon({ color: ['#e8e0cc', '#5d6f9e'][i] }));
       roll.rotation.x = Math.PI / 2;
-      roll.position.set(6 + i * 0.5, 0.22, 46);
+      roll.position.set(9.5 + i * 0.5, 0.22, 44);
       cloth.add(roll);
     }
     hide(cloth);

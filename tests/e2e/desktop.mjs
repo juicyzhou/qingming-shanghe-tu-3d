@@ -115,7 +115,7 @@ await ev(`${G}.hud._minigameClose(); 1`);
 check('竞速可正常关闭', await ev(`${G}.hud._minigameClose === null`));
 
 // ---- 12. 买茶任务（真实购买对话） ----
-await setPos(-5, 12); // 茶博士（茶肆门前）
+await setPos(-10, 14); // 茶博士（茶肆门前）
 await ev(`${G}.tryInteract(); 1`);
 await click('.d-opt'); // 接任务
 check('接受买茶任务', await ev(`${G}.quests.status('buy_tea') === 'active'`));
@@ -127,7 +127,7 @@ await setPos(2, 44); // 桥南茶摊
 await ev(`${G}.tryInteract(); 1`);
 await click('.d-opt'); // 买一包
 check('真实购买茶叶成功', await ev(`${G}.inventory.has('tea')`), 'coins=' + await ev(`${G}.inventory.coins`));
-await setPos(-5, 12);
+await setPos(-10, 14);
 await ev(`${G}.tryInteract(); 1`);
 await click('.d-opt'); // 交付
 check('买茶任务完成', await ev(`${G}.quests.isDone('buy_tea')`));
