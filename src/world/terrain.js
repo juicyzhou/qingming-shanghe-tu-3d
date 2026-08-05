@@ -52,6 +52,73 @@ export function buildTerrain(scene) {
   scene.add(group);
 }
 
+// 天空：白天太阳、夜晚星月（Sprite/Points，透明度由 Game 随昼夜切换）
+export function buildSky(scene) {
+  const group = new THREE.Group();
+
+  // 太阳（暖光晕）
+  const sunTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const grad = g.createRadialGradient(64, 64, 8, 64, 64, 60);
+    grad.addColorStop(0, 'rgba(255,240,190,1)');
+    grad.addColorStop(0.4, 'rgba(255,205,120,0.85)');
+    grad.addColorStop(1, 'rgba(255,185,85,0)');
+    g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  const sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTex, transparent: true, opacity: 0, depthWrite: false, fog: false }));
+  sun.scale.set(36, 36, 1);
+  sun.position.set(95, 152, 60); // 沿日照方向高空
+  group.add(sun);
+
+  // 月亮（冷白光 + 月牙阴影）
+  const moonTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const grad = g.createRadialGradient(64, 64, 10, 64, 64, 56);
+    grad.addColorStop(0, 'rgba(238,243,255,0.95)');
+    grad.addColorStop(0.45, 'rgba(220,230,250,0.5)');
+    grad.addColorStop(1, 'rgba(205,220,245,0)');
+    g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+    g.fillStyle = 'rgba(233,222,200,0.55)'; // 月牙阴影
+    g.beginPath(); g.arc(88, 54, 34, 0, Math.PI * 2); g.fill();
+    return new THREE.CanvasTexture(c);
+  })();
+  const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonTex, transparent: true, opacity: 0, depthWrite: false, fog: false }));
+  moon.scale.set(22, 22, 1);
+  moon.position.set(-120, 168, -70);
+  group.add(moon);
+
+  // 星星（穹顶点云，夜晚浮现）
+  const N = 260;
+  const pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(0.3 + Math.random() * 0.7); // 上方穹顶
+    const r = 230;
+    pos[i * 3] = Math.sin(phi) * Math.cos(theta) * r;
+    pos[i * 3 + 1] = Math.cos(phi) * r + 10;
+    pos[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * r;
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const dotTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 16;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(8, 8, 2.5, 0, Math.PI * 2); g.fill();
+    return new THREE.CanvasTexture(c);
+  })();
+  const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
+    color: 0xffffff, map: dotTex, transparent: true, opacity: 0,
+    size: 2.4, sizeAttenuation: false, depthWrite: false, fog: false,
+  }));
+  group.add(stars);
+
+  scene.add(group);
+  return { sun, moon, stars };
+}
+
 // 远山：北南两列黛青山脊，远景入画（单位圆锥按轴向缩放，山脊长轴沿 x、厚度沿 z）
 // fogScale 减雾：远山作为背景层，不受远处雾过度淹没，保持"青山入画"可见
 export function buildMountains(scene) {

@@ -14,6 +14,12 @@ const CSS = `
   .t-v{right:22px;top:calc(86px + env(safe-area-inset-top));}
   .t-j{right:100px;top:calc(86px + env(safe-area-inset-top));}
   .t-p{right:22px;top:calc(16px + env(safe-area-inset-top));width:52px;height:52px;font-size:13px;}
+  /* PUBG 风格疾跑键：摇杆右侧，按住疾跑 */
+  .t-run{position:fixed;z-index:46;left:132px;bottom:calc(26px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.5);background:rgba(70,45,20,.38);color:#f3e8cd;
+    display:flex;align-items:center;justify-content:center;pointer-events:auto;user-select:none;-webkit-user-select:none;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);touch-action:none;font-size:24px;}
+  .t-run:active{background:rgba(180,120,60,.6);}
   .t-mg{position:fixed;z-index:47;left:50%;bottom:22%;transform:translateX(-50%);width:180px;height:64px;
     border-radius:16px;border:2px solid #f3e8cd;background:rgba(140,58,32,.75);color:#f3e8cd;
     font-family:"Kaiti SC","KaiTi",serif;font-size:20px;letter-spacing:4px;pointer-events:auto;}
@@ -48,11 +54,13 @@ export class TouchControls {
     this.btnV = el('button', 't-btn t-v', '视角');
     this.btnJ = el('button', 't-btn t-j', '任务');
     this.btnP = el('button', 't-btn t-p', '菜单'); // 暂停/设置（P0-3）
+    this.btnRun = el('button', 't-run', '🏃');     // PUBG 风格疾跑（按住跑）
     this.btnE.style.display = 'none';   // 有可交互目标时才显示
     document.body.appendChild(this.btnE);
     document.body.appendChild(this.btnV);
     document.body.appendChild(this.btnJ);
     document.body.appendChild(this.btnP);
+    document.body.appendChild(this.btnRun);
     this.btnE.addEventListener('click', (e) => { e.preventDefault(); input.tapKey('KeyE'); });
     this.btnV.addEventListener('click', (e) => { e.preventDefault(); input.tapKey('KeyV'); });
     this.btnJ.addEventListener('click', (e) => { e.preventDefault(); input.tapKey('KeyJ'); });
@@ -60,6 +68,12 @@ export class TouchControls {
       e.preventDefault();
       if (this.onPause) this.onPause(); // 由 Game 注入 togglePause
     });
+    // 疾跑：按住 Shift（与键盘疾跑同源）
+    const runOn = () => { input.keys.add('ShiftLeft'); };
+    const runOff = () => { input.keys.delete('ShiftLeft'); };
+    this.btnRun.addEventListener('touchstart', (e) => { e.preventDefault(); runOn(); }, { passive: false });
+    this.btnRun.addEventListener('touchend', (e) => { e.preventDefault(); runOff(); }, { passive: false });
+    this.btnRun.addEventListener('touchcancel', runOff);
 
     this._bindJoystick();
     this._bindLook();

@@ -170,6 +170,10 @@ export class Game {
       this.audio.startAmbient(); // P1-2 环境音：水流/市井/鸟鸣
     }
     this.analytics.begin(); // P3-4 会话开始
+    // 横屏进入画卷时自动全屏（在用户手势内；拒绝静默忽略）
+    if (window.innerWidth > window.innerHeight && document.fullscreenEnabled) {
+      try { const el = document.documentElement; const p = el.requestFullscreen && el.requestFullscreen(); if (p && p.catch) p.catch(() => {}); } catch {}
+    }
     this.hud.update(this);
     this._running = true;
     this._clock.start();
@@ -365,6 +369,17 @@ export class Game {
     FOG_UNIFORMS.uFogColor.value.copy(bg);
     this.scene.background.copy(bg);
     if (this.scene.fog) this.scene.fog.color.copy(bg);
+    this._syncSky(nf); // 太阳/星月随昼夜浮现
+  }
+
+  // 天空：白天太阳、夜晚星月（透明度随夜因子）
+  _syncSky(nf = this._nightFactor()) {
+    const sky = this.world && this.world.sky;
+    if (!sky) return;
+    const day = 1 - nf;
+    sky.sun.material.opacity = day * 0.95;
+    sky.moon.material.opacity = nf * 0.85;
+    sky.stars.material.opacity = nf * 0.75;
   }
 
   // P2-5 天气联动：水面光斑/雨色 + 雨声

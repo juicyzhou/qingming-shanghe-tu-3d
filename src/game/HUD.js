@@ -9,7 +9,7 @@ const CSS = `
   #hud .panel{background:linear-gradient(160deg,#f3e8cd,#e7d7b4);border:3px solid #8a6a44;border-radius:10px;
     box-shadow:0 4px 14px rgba(70,50,20,.35), inset 0 0 0 1px rgba(255,250,230,.5);}
   #hud .topbar{position:absolute;top:12px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
-  #hud .leftcol{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;max-width:240px;}
+  #hud .leftcol{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;max-width:150px;}
   #hud .rep-coins{display:flex;flex-direction:column;align-items:flex-start;padding:6px 10px;gap:3px;}
   #hud .rep-coins .rep{font-size:12px;font-weight:bold;color:#8a3a20;line-height:1.2;white-space:nowrap;}
   #hud .coins{display:flex;align-items:center;gap:5px;font-size:15px;font-weight:bold;line-height:1;}
@@ -20,7 +20,7 @@ const CSS = `
   #hud .quest-track .qitem{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #hud .quest-track .qitem.done{color:#5a6e3a;}
   #hud .minimap-wrap{text-align:right;}
-  #hud canvas.minimap{width:150px;height:150px;background:#efe2c0;border:3px solid #8a6a44;border-radius:8px;box-shadow:0 4px 12px rgba(70,50,20,.3);}
+  #hud canvas.minimap{width:130px;height:130px;background:#efe2c0;border:3px solid #8a6a44;border-radius:8px;box-shadow:0 4px 12px rgba(70,50,20,.3);}
   #hud .hint{position:absolute;top:118px;right:14px;font-size:12px;color:#7a5f38;text-align:right;line-height:1.9;}
   #hud .prompt{position:absolute;left:50%;bottom:12%;transform:translateX(-50%);padding:10px 20px;font-size:19px;
     background:rgba(243,232,205,.94);border:2px solid #8a6a44;border-radius:8px;box-shadow:0 3px 10px rgba(0,0,0,.25);}
@@ -159,7 +159,8 @@ const CSS = `
     #hud .quest-track{padding:5px 9px;font-size:11px;background:rgba(243,232,205,.66);}
     #hud .quest-track h3{font-size:11px;}
     #hud .hint{display:none;}
-    #hud canvas.minimap{width:140px;height:140px;}
+    #hud canvas.minimap{width:110px;height:110px;}
+    #hud .leftcol{max-width:120px;}
     #hud .dialogue{width:94vw;padding:12px 14px;font-size:15px;}
     #hud .d-text{font-size:15px;}
     #hud .d-opt{font-size:14px;padding:9px 12px;}
@@ -224,6 +225,7 @@ export class HUD {
           <div class="vol-row">音量 <input type="range" id="vol" min="0" max="1" step="0.05"></div>
           <button class="btn ghost" id="pm-outline" style="display:none">墨线描边：开</button>
           <button class="btn" id="pm-continue">继续漫游</button>
+          <button class="btn ghost" id="pm-full">进入全屏</button>
           <button class="btn ghost" id="pm-restart">重新开始</button>
           <button class="btn ghost" id="pm-title">返回标题</button>
         </div>
@@ -363,6 +365,22 @@ export class HUD {
     el.querySelector('#pm-continue').onclick = () => game.togglePause();
     el.querySelector('#pm-restart').onclick = () => location.reload();
     el.querySelector('#pm-title').onclick = () => location.reload();
+    // 全屏开关
+    const pf = el.querySelector('#pm-full');
+    const syncFull = () => {
+      pf.textContent = document.fullscreenElement ? '退出全屏' : '进入全屏';
+    };
+    syncFull();
+    pf.onclick = () => {
+      if (document.fullscreenElement) {
+        const ep = document.exitFullscreen && document.exitFullscreen();
+        if (ep && ep.catch) ep.catch(() => {});
+      } else {
+        try { const d = document.documentElement; const p = d.requestFullscreen && d.requestFullscreen(); if (p && p.catch) p.catch(() => {}); } catch {}
+      }
+      setTimeout(syncFull, 300);
+    };
+    document.addEventListener('fullscreenchange', syncFull);
     // P1-5 墨线描边开关（仅桌面/有描边 pass 时显示）
     const ob = el.querySelector('#pm-outline');
     if (game.composer && game.composer.outlinePass) {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildTerrain, buildMountains } from './terrain.js';
+import { buildTerrain, buildMountains, buildSky } from './terrain.js';
 import { buildRiver } from './river.js';
 import { buildBridge } from './bridge.js';
 import { buildBuildings } from './buildings.js';
@@ -238,6 +238,7 @@ export class World {
     this.scene = scene;
     buildTerrain(scene);
     buildMountains(scene); // 远山
+    this.sky = buildSky(scene); // 太阳/月亮/星星
     this.river = buildRiver(scene);
     buildBridge(scene);
     this.interiors = buildBuildings(scene); // 可进入店铺（门/内室）
