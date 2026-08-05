@@ -120,7 +120,7 @@ export class Sky {
       return new THREE.CanvasTexture(c);
     })();
     this.sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTex, transparent: true, opacity: 0.95, depthWrite: false, fog: false }));
-    this.sun.scale.set(26, 26, 1);
+    this.sun.scale.set(40, 40, 1);
     scene.add(this.sun);
 
     // ---- 月亮 ----
@@ -160,37 +160,46 @@ export class Sky {
     }));
     scene.add(this.stars);
 
-    // ---- 云层：横向拉长的水平云带（非 billboard，平贴高空更像真云） ----
+    // ---- 云层：billboard 积云（扁平底 + 顶部凸起，始终面向相机不像石板） ----
     const cloudTex = (() => {
-      const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+      const c = document.createElement('canvas'); c.width = 256; c.height = 128;
       const g = c.getContext('2d');
-      for (let i = 0; i < 16; i++) {
-        const x = Math.random() * 512, y = 40 + Math.random() * 55;
-        const rw = 26 + Math.random() * 55, rh = rw * (0.3 + Math.random() * 0.25);
-        const grad = g.createRadialGradient(x, y, 1, x, y, rw);
-        grad.addColorStop(0, 'rgba(255,255,255,0.9)');
-        grad.addColorStop(0.6, 'rgba(255,255,255,0.4)');
-        grad.addColorStop(1, 'rgba(255,255,255,0)');
-        g.fillStyle = grad;
-        g.save(); g.translate(x, y); g.scale(1, rh / rw);
-        g.beginPath(); g.arc(0, 0, rw, 0, Math.PI * 2); g.fill();
+      const cumulus = (x, y, w, h) => {
+        // 扁平主体
+        const base = g.createRadialGradient(x, y, 2, x, y, w);
+        base.addColorStop(0, 'rgba(255,255,255,0.92)');
+        base.addColorStop(0.6, 'rgba(255,255,255,0.5)');
+        base.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = base;
+        g.save(); g.translate(x, y); g.scale(1, h / w);
+        g.beginPath(); g.arc(0, 0, w, 0, Math.PI * 2); g.fill();
         g.restore();
-      }
+        // 顶部半球凸起
+        for (let i = 0; i < 7; i++) {
+          const px = x + (Math.random() - 0.5) * w * 1.1;
+          const py = y - h * (0.25 + Math.random() * 0.55);
+          const pr = w * (0.16 + Math.random() * 0.22);
+          const gr = g.createRadialGradient(px, py, 1, px, py, pr);
+          gr.addColorStop(0, 'rgba(255,255,255,0.8)');
+          gr.addColorStop(1, 'rgba(255,255,255,0)');
+          g.fillStyle = gr;
+          g.beginPath(); g.arc(px, py, pr, 0, Math.PI * 2); g.fill();
+        }
+      };
+      cumulus(128, 96, 118, 52); // 一朵大积云
+      cumulus(210, 105, 62, 28);  // 一朵小碎云
       return new THREE.CanvasTexture(c);
     })();
     this.clouds = [];
-    const cloudMat = new THREE.MeshBasicMaterial({ map: cloudTex, transparent: true, opacity: 0.55, depthWrite: false, fog: false, side: THREE.DoubleSide });
-    for (let i = 0; i < 7; i++) {
-      const pl = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), cloudMat);
+    for (let i = 0; i < 9; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: 0.6, depthWrite: false, fog: false }));
       const a = Math.random() * Math.PI * 2;
-      const r = 150 + Math.random() * 90;
-      const w = 150 + Math.random() * 130;
-      pl.scale.set(w, w * 0.32, 1);
-      pl.position.set(Math.cos(a) * r, 95 + Math.random() * 60, Math.sin(a) * r);
-      pl.rotation.x = -Math.PI / 2 + (Math.random() - 0.5) * 0.2; // 近乎水平
-      pl.rotation.z = Math.random() * Math.PI;
-      scene.add(pl);
-      this.clouds.push(pl);
+      const r = 160 + Math.random() * 90;
+      const w = 110 + Math.random() * 90;
+      sp.scale.set(w, w * 0.42, 1);
+      sp.position.set(Math.cos(a) * r, 95 + Math.random() * 60, Math.sin(a) * r);
+      scene.add(sp);
+      this.clouds.push(sp);
     }
 
     // ---- 阳光光柱（细窄锥形光束，从太阳洒向大地；避免糊住天空） ----
