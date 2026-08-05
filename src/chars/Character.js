@@ -236,9 +236,9 @@ export class Character extends THREE.Group {
 
     // ---- 帽（宋制） ----
     const darkMat = toon({ color: 0x1c1814 });
-    // 罩头式半胶囊壳（统一覆盖头冠至发际线 y=0.35，非顶戴）
+    // 罩头式半胶囊壳（统一覆盖头冠至发际线 y=0.35，非顶戴；加高避免"碗"感）
     const shellCap = (r, mat) => {
-      const s = new THREE.Mesh(new THREE.CapsuleGeometry(headR * r, headR * 0.45, 4, 14, 1, 0, Math.PI * 2, 0, Math.PI / 2), mat);
+      const s = new THREE.Mesh(new THREE.CapsuleGeometry(headR * r, headR * 0.65, 4, 14, 1, 0, Math.PI * 2, 0, Math.PI / 2), mat);
       s.position.y = headR * 0.35;
       this.headGroup.add(s);
       return s;
@@ -250,17 +250,17 @@ export class Character extends THREE.Group {
       band.position.y = headR * 0.35;
       this.headGroup.add(band);
     } else if (hat === 'dongpo') {
-      // 方巾帽（参考宁采臣）：上窄下宽锥形，顶部圆润封口（无洞），罩住头顶至发际线
+      // 方巾帽（参考宁采臣）：上窄下宽高锥形，顶部圆润封口（无洞），加高不似碗
       const cap = new THREE.Mesh(new THREE.LatheGeometry([
-        new THREE.Vector2(headR * 1.12, headR * 0.35),   // 底（发际线，最宽）
-        new THREE.Vector2(headR * 0.90, headR * 1.00),   // 中段
-        new THREE.Vector2(headR * 0.60, headR * 1.50),   // 顶缘（收窄）
-        new THREE.Vector2(headR * 0.30, headR * 1.62),   // 圆顶过渡
-        new THREE.Vector2(0, headR * 1.66),              // 顶封口（轴线收拢，无洞）
+        new THREE.Vector2(headR * 1.15, headR * 0.35),   // 底（发际线，最宽）
+        new THREE.Vector2(headR * 0.95, headR * 1.05),   // 中段
+        new THREE.Vector2(headR * 0.65, headR * 1.70),   // 顶缘（收窄）
+        new THREE.Vector2(headR * 0.32, headR * 1.88),   // 圆顶过渡
+        new THREE.Vector2(0, headR * 1.95),              // 顶封口（轴线收拢，无洞）
       ], 16), darkMat);
       this.headGroup.add(cap);
       // 额带（帽底缘）
-      const band = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.18, H * 0.022, headR * 1.18, 2, H * 0.01), toon({ color: 0x3a3226 }));
+      const band = new THREE.Mesh(new RoundedBoxGeometry(headR * 1.22, H * 0.022, headR * 1.22, 2, H * 0.01), toon({ color: 0x3a3226 }));
       band.position.y = headR * 0.35;
       this.headGroup.add(band);
     } else if (hat === 'jin') {

@@ -313,41 +313,41 @@ export function faceTexture(cfg = {}) {
   g.lineWidth = cfg.old ? 5 : 4;
   const bt = cfg.browTilt || 0;
   g.beginPath();
-  g.moveTo(cx - 26, browY + bt);
-  g.quadraticCurveTo(cx - 13, browY - 6 - bt, cx - 5, browY - 4 - bt);
-  g.moveTo(cx + 5, browY - 4 - bt);
-  g.quadraticCurveTo(cx + 13, browY - 6 - bt, cx + 26, browY + bt);
+  g.moveTo(cx - 16, browY + bt);
+  g.quadraticCurveTo(cx - 8, browY - 6 - bt, cx - 3, browY - 4 - bt);
+  g.moveTo(cx + 3, browY - 4 - bt);
+  g.quadraticCurveTo(cx + 8, browY - 6 - bt, cx + 16, browY + bt);
   g.stroke();
 
-  // 眼睛：眼白 + 上眼睑 + 瞳孔 + 双高光（清爽杏眼）
+  // 眼睛：眼白 + 上眼睑 + 瞳孔 + 双高光（紧凑在前脸中心，勿包到侧面）
   const eyeY = s * 0.47;
-  const eyeDX = 22;
+  const eyeDX = 12;
   const eyeH = 8.5;
   for (const side of [-1, 1]) {
     const ex = cx + side * eyeDX;
     // 眼白
     g.fillStyle = '#fdf5e6';
     g.beginPath();
-    g.ellipse(ex, eyeY, 10.5, eyeH, 0, 0, Math.PI * 2);
+    g.ellipse(ex, eyeY, 9, eyeH, 0, 0, Math.PI * 2);
     g.fill();
     // 上眼睑线
     g.strokeStyle = shade(hairColor, 0.18);
     g.lineWidth = 3.4;
     g.beginPath();
-    g.ellipse(ex, eyeY - 1.5, 10.6, eyeH * 1.08, 0, Math.PI * 1.06, Math.PI * 1.95);
+    g.ellipse(ex, eyeY - 1.5, 9.1, eyeH * 1.08, 0, Math.PI * 1.06, Math.PI * 1.95);
     g.stroke();
     // 瞳孔
     g.fillStyle = '#35291f';
     g.beginPath();
-    g.ellipse(ex, eyeY + 1, 5.4, eyeH * 0.8, 0, 0, Math.PI * 2);
+    g.ellipse(ex, eyeY + 1, 4.8, eyeH * 0.8, 0, 0, Math.PI * 2);
     g.fill();
     // 高光
     g.fillStyle = 'rgba(255,255,255,0.95)';
     g.beginPath();
-    g.arc(ex - 2, eyeY - 2, 2.3, 0, Math.PI * 2);
+    g.arc(ex - 1.8, eyeY - 2, 2.1, 0, Math.PI * 2);
     g.fill();
     g.beginPath();
-    g.arc(ex + 2.8, eyeY + 1.6, 1.2, 0, Math.PI * 2);
+    g.arc(ex + 2.5, eyeY + 1.6, 1.1, 0, Math.PI * 2);
     g.fill();
   }
 
@@ -369,11 +369,11 @@ export function faceTexture(cfg = {}) {
   g.lineWidth = 3.2;
   g.beginPath();
   if (cfg.smile) {
-    g.moveTo(cx - 12, mouthY);
-    g.quadraticCurveTo(cx, mouthY + 8, cx + 12, mouthY);
+    g.moveTo(cx - 8, mouthY);
+    g.quadraticCurveTo(cx, mouthY + 8, cx + 8, mouthY);
   } else {
-    g.moveTo(cx - 11, mouthY);
-    g.quadraticCurveTo(cx, mouthY + 3.5, cx + 11, mouthY);
+    g.moveTo(cx - 7, mouthY);
+    g.quadraticCurveTo(cx, mouthY + 3.5, cx + 7, mouthY);
   }
   g.stroke();
 
@@ -382,7 +382,7 @@ export function faceTexture(cfg = {}) {
     g.fillStyle = 'rgba(224,116,92,0.20)';
     for (const side of [-1, 1]) {
       g.beginPath();
-      g.ellipse(cx + side * 30, s * 0.60, 9.5, 5.5, 0, 0, Math.PI * 2);
+      g.ellipse(cx + side * 16, s * 0.60, 8, 5, 0, 0, Math.PI * 2);
       g.fill();
     }
   }
@@ -395,10 +395,10 @@ export function faceTexture(cfg = {}) {
       g.strokeStyle = bc;
       g.lineWidth = 3.4;
       g.beginPath();
-      g.moveTo(cx - 9, s * 0.655);
-      g.quadraticCurveTo(cx - 16, s * 0.66, cx - 21, s * 0.685);
-      g.moveTo(cx + 9, s * 0.655);
-      g.quadraticCurveTo(cx + 16, s * 0.66, cx + 21, s * 0.685);
+      g.moveTo(cx - 6, s * 0.655);
+      g.quadraticCurveTo(cx - 11, s * 0.66, cx - 14, s * 0.685);
+      g.moveTo(cx + 6, s * 0.655);
+      g.quadraticCurveTo(cx + 11, s * 0.66, cx + 14, s * 0.685);
       g.stroke();
     } else if (beard === 'goatee') { // 山羊胡
       g.fillStyle = bc;
@@ -408,15 +408,15 @@ export function faceTexture(cfg = {}) {
     } else { // 络腮
       g.fillStyle = bc;
       g.beginPath();
-      g.ellipse(cx, s * 0.735, 26, 13, 0, 0, Math.PI);
+      g.ellipse(cx, s * 0.735, 20, 12, 0, 0, Math.PI);
       g.fill();
       g.strokeStyle = bc;
       g.lineWidth = 4;
       g.beginPath();
-      g.moveTo(cx - 9, s * 0.655);
-      g.quadraticCurveTo(cx - 17, s * 0.665, cx - 22, s * 0.70);
-      g.moveTo(cx + 9, s * 0.655);
-      g.quadraticCurveTo(cx + 17, s * 0.665, cx + 22, s * 0.70);
+      g.moveTo(cx - 6, s * 0.655);
+      g.quadraticCurveTo(cx - 12, s * 0.665, cx - 15, s * 0.70);
+      g.moveTo(cx + 6, s * 0.655);
+      g.quadraticCurveTo(cx + 12, s * 0.665, cx + 15, s * 0.70);
       g.stroke();
     }
   }
