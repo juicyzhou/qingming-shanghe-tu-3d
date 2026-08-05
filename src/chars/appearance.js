@@ -8,25 +8,25 @@ export const HAIR_COLORS = ['#241a14', '#33241a', '#3d2a1c', '#4a3422', '#6b5138
 export const ROLE_PRESETS = {
   huolang:     { hat: 'straw', cloth: [0x8a6d3b, 0x6e8a4f, 0x7a5a34], trim: 0xc04a30, apron: 0xc9b478 },
   vendor:      { hat: 'straw', cloth: [0x955f8f, 0xb07c36, 0x54725a], trim: 0x2a2018 },
-  waiter:      { hat: 'jin',   cloth: [0x2f6d4f, 0x4a6b9a, 0x6e8a4f], trim: 0xc9a24a, apron: 0xe0d0a0, sleeveColor: 0xffffff },
-  tea:         { hat: 'jin',   cloth: [0x3c7a82, 0x5d6f9e], trim: 0xc9a24a },
-  scholar:     { hat: 'futou', cloth: [0x4a6b9a, 0x3a5a8a, 0x5d6f9e], trim: 0xe8dcb0, sleeveColor: 0xffffff },
+  waiter:      { hat: 'jin',   cloth: [0x2f6d4f, 0x4a6b9a, 0x6e8a4f, 0x955f8f, 0xb0622f], trim: 0xc9a24a, apron: 0xe0d0a0, sleeveColor: 0xffffff },
+  tea:         { hat: 'jin',   cloth: [0x3c7a82, 0x5d6f9e, 0x54725a, 0x8a6d3b], trim: 0xc9a24a },
+  scholar:     { hat: 'none',  cloth: [0x4a6b9a, 0x3a5a8a, 0x5d6f9e, 0x7a5aa0, 0x2f6d4f], trim: 0xe8dcb0, sleeveColor: 0xffffff, crown: true },
   monk:        { hat: 'none',  cloth: [0xa86e54, 0xb07c36, 0x955f8f], trim: 0xf0e0a0 },
-  boatman:     { hat: 'straw', cloth: [0x7a5a34, 0x8a6d3b, 0x6e4f2c], trim: 0x4a3a28, apron: 0x6e8a4f },
-  porter:      { hat: 'jin',   cloth: [0x6e5a3c, 0x5a4a30], trim: 0x2a2018 },
-  yamen:       { hat: 'futou', cloth: [0xb04a4a, 0x8a3a3a], trim: 0xc9b478, sleeveColor: 0xffffff },
-  general:     { hat: 'official', cloth: [0x3a3a52, 0x4a4a62], trim: 0xcaa24a },
-  storyteller: { hat: 'jin',   cloth: [0xb07c36, 0xa8642e], trim: 0xe8dcb0 },
-  doctor:      { hat: 'dongpo', cloth: [0x5d6f9e, 0x4a5a8a], trim: 0xe8dcb0 },
-  farmer:      { hat: 'straw', cloth: [0x8a7a5a, 0x6e8a4f], trim: 0x4a3a28, apron: 0xa0906a },
-  child:       { hat: 'none',  cloth: [0xd8b23c, 0xc04a30, 0x3f7a4a, 0x5d6f9e], trim: 0xffffff },
-  official:    { hat: 'official', cloth: [0x4a4a5a, 0x5a4a4a], trim: 0xcaa24a },
-  woman:       { hat: 'none',  cloth: [0xa84a5a, 0x7a5aa0, 0xc04a30, 0x3c7a82, 0xb0622f], trim: 0xf0e0a0, sleeveColor: 0xffffff },
-  cook:        { hat: 'guanyin', cloth: [0xa86e54, 0x8a6d3b], trim: 0x4a3a28, apron: 0xd8c8a0 },
-  acrobat:     { hat: 'jin',   cloth: [0xd04a30, 0xb07c36], trim: 0xf0e0a0, sleeveColor: 0xe0d0a0 },
+  boatman:     { hat: 'straw', cloth: [0x7a5a34, 0x8a6d3b, 0x6e4f2c, 0x3c7a82], trim: 0x4a3a28, apron: 0x6e8a4f },
+  porter:      { hat: 'jin',   cloth: [0x6e5a3c, 0x5a4a30, 0x955f8f], trim: 0x2a2018 },
+  yamen:       { hat: 'guan',  cloth: [0xb04a4a, 0x8a3a3a], trim: 0xc9b478, sleeveColor: 0xffffff },
+  general:     { hat: 'guan',  cloth: [0x3a3a52, 0x4a4a62, 0x2c4a4a], trim: 0xcaa24a },
+  storyteller: { hat: 'jin',   cloth: [0xb07c36, 0xa8642e, 0x5d6f9e], trim: 0xe8dcb0 },
+  doctor:      { hat: 'dongpo', cloth: [0x5d6f9e, 0x4a5a8a, 0x2f6d4f], trim: 0xe8dcb0 },
+  farmer:      { hat: 'straw', cloth: [0x8a7a5a, 0x6e8a4f, 0xa8642e], trim: 0x4a3a28, apron: 0xa0906a },
+  child:       { hat: 'none',  cloth: [0xd8b23c, 0xc04a30, 0x3f7a4a, 0x5d6f9e, 0x955f8f], trim: 0xffffff },
+  official:    { hat: 'guan',  cloth: [0x4a4a5a, 0x5a4a4a, 0x3a3a52], trim: 0xcaa24a },
+  woman:       { hat: 'none',  cloth: [0xa84a5a, 0x7a5aa0, 0xc04a30, 0x3c7a82, 0xb0622f, 0x955f8f], trim: 0xf0e0a0, sleeveColor: 0xffffff },
+  cook:        { hat: 'guanyin', cloth: [0xa86e54, 0x8a6d3b, 0x6e8a4f], trim: 0x4a3a28, apron: 0xd8c8a0 },
+  acrobat:     { hat: 'jin',   cloth: [0xd04a30, 0xb07c36, 0x4a6b9a], trim: 0xf0e0a0, sleeveColor: 0xe0d0a0 },
   guest:       { hat: 'none',  cloth: CLOTH_PALETTE, trim: 0x2a2018 },
-  weaver:      { hat: 'guanyin', cloth: [0x3c7a82, 0x5d9a8a], trim: 0xe8dcb0 },
-  fish:        { hat: 'straw', cloth: [0x6e8a4f, 0x7a5a34], trim: 0x4a3a28, apron: 0xc9b478 },
+  weaver:      { hat: 'guanyin', cloth: [0x3c7a82, 0x5d9a8a, 0x955f8f], trim: 0xe8dcb0 },
+  fish:        { hat: 'straw', cloth: [0x6e8a4f, 0x7a5a34, 0x4a6b9a], trim: 0x4a3a28, apron: 0xc9b478 },
 };
 
 // 生成一份外观配置（可传 seed 保证同一 NPC 每次一致）
@@ -69,6 +69,7 @@ export function generateAppearance(role = 'guest', seed = 0) {
     hair: faceCfg.hair,
     hairStyle,
     hat: preset.hat,
+    crown: !!preset.crown,            // 束发玉冠（翩翩公子）
     cloth: typeof preset.cloth === 'number' ? preset.cloth : pick(preset.cloth),
     trim: preset.trim,
     apron: preset.apron || null,
@@ -79,10 +80,11 @@ export function generateAppearance(role = 'guest', seed = 0) {
   };
 }
 
-// 玩家外观：一位进京赶考的书生
+// 玩家外观：一位进京赶考的翩翩公子（束发玉冠 · 青衫直裰）
 export function playerAppearance() {
   const app = generateAppearance('scholar', 20260802);
-  app.hat = 'futou';
+  app.hat = 'none';
+  app.crown = true;                     // 束发玉冠
   app.hairStyle = 'topknot';
   app.cloth = 0x3a5a8a;
   app.trim = 0xe8dcb0;
