@@ -10,14 +10,14 @@ export class Player extends Character {
     super(playerAppearance());
     this.isPlayer = true;
     this.viewMode = 3;              // 3=第三人称 1=第一人称
-    this.yaw = Math.PI;             // 视角水平角（0 朝 +z）
+    this.yaw = 0;                   // 视角水平角（0 朝 +z → 面朝拱桥）
     this.pitch = -0.12;
     this.px = 0;                    // 世界坐标
-    this.pz = -18;
+    this.pz = -8;
     this.speed = 0;
     this.camPos = new THREE.Vector3(0, 2.2, -14); // 相机平滑缓冲
     this.stepAcc = 0;
-    this.setHeading(Math.PI); // 初始面向城门方向（-z）
+    this.setHeading(0);             // 初始面朝拱桥方向（+z）
     this.inside = null; // 当前所在的店铺内室
   }
 

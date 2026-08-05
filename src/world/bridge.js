@@ -79,31 +79,6 @@ export function buildBridge(scene) {
   const braceMesh = new THREE.Mesh(mergeGeometries(braces, false), braceMat);
   group.add(postMesh, railMesh, braceMesh);
 
-  // ---- 桥中遮阳亭 ----
-  const canopy = new THREE.Group();
-  const colMat = toon({ color: 0x8a4a2a });
-  const zc = (BRIDGE.z0 + BRIDGE.z1) / 2; // 30
-  for (const side of [-1, 1]) {
-    for (const off of [-1, 1]) {
-      const col = new THREE.Mesh(
-        flat(new THREE.CylinderGeometry(0.12, 0.14, 2.6, 6)),
-        colMat
-      );
-      col.position.set(side * 2.6, bridgeHeightAt(zc + off * 2.2) + 1.4, zc + off * 2.2);
-      canopy.add(col);
-    }
-  }
-  // 亭顶
-  const roofGeo = flat(new THREE.BoxGeometry(7.2, 0.18, 4.4));
-  const roof = new THREE.Mesh(roofGeo, roofMat);
-  roof.position.set(0, bridgeHeightAt(zc) + 2.7, zc);
-  canopy.add(roof);
-  const ridge = new THREE.Mesh(flat(new THREE.CylinderGeometry(0.1, 0.1, 6.6, 6)), colMat);
-  ridge.rotation.z = Math.PI / 2;
-  ridge.position.set(0, bridgeHeightAt(zc) + 2.85, zc);
-  canopy.add(ridge);
-  group.add(canopy);
-
   scene.add(group);
   return group;
 }

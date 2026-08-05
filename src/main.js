@@ -101,7 +101,7 @@ if (TEST_PARAMS.get('autostart') === '1') {
     if (view === 'spawn') {
       g.player._freeCam = false;               // 默认出生视角（第三人称）
       g.player.px = 0; g.player.pz = -8;
-      g.player.yaw = Math.PI; g.player.pitch = -0.12;
+      g.player.yaw = 0; g.player.pitch = -0.12; // 面朝拱桥（+z）
     } else {
       g.player._freeCam = true;
       g.player.px = 0; g.player.pz = 30;
@@ -202,7 +202,11 @@ window.__features = (g) => {
   g.quests.accept('herbs'); g.quests.talkTo('daifu');
   const t3 = g.getGuideTarget();
   out.push('guide3=' + (t3 && Math.hypot(t3.x - 26, t3.z - 18.5) < 3 ? 'herb' : 'FAIL'));
-  // 5) 指引箭头渲染
+  // 5) 指引箭头渲染（切到第三人称地面视角，目标在身后 → 屏幕边缘箭头出现）
+  g.player._freeCam = false;
+  g.player.px = 26; g.player.pz = 40; g.player.yaw = 0; // 药草在身后（-z）
+  g.player.update(0.016, g.input);
+  g.camera.updateMatrixWorld(true);
   g.hud.updateGuide(g);
   const arrowOn = g.hud.cache.gArrow.style.display === 'flex' || g.hud.cache.gArrow.style.display === 'block';
   const tagTxt = g.hud.cache.gTag.textContent;

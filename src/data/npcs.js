@@ -39,15 +39,15 @@ export const NPC_DEFS = [
   n('buzhuang', '沈掌柜', 'weaver', 4, 46, { behavior: 'stand' }),             // 布庄门前
   n('tangren', '糖人张', 'vendor', -17.6, 5.6, { behavior: 'stand' }),
 
-  // ---- 街市群像 ----
-  n('', '张铁柱', 'waiter', 5.2, -40),
-  n('', '李阿贵', 'waiter', 5.2, -55),
-  n('', '钱掌柜', 'guest', 5.2, -70),
-  n('', '孙二娘', 'woman', 5.2, -28),
-  n('', '赵大郎', 'guest', -5.2, -60, { behavior: 'wander' }),
-  n('', '周五郎', 'porter', -5.2, -70),
-  n('', '郑三嫂', 'cook', -5.2, -40),
-  n('', '吴秀才', 'scholar', -5.2, -50, { behavior: 'wander' }),
+  // ---- 街市群像（两岸） ----
+  n('', '张铁柱', 'waiter', 5, 9),        // 北岸·醉仙楼旁
+  n('', '李阿贵', 'waiter', -6, 13),      // 北岸·茶肆旁
+  n('', '钱掌柜', 'guest', -7, 20),       // 桥北头
+  n('', '孙二娘', 'woman', 6, 47),        // 南岸·布庄旁
+  n('', '赵大郎', 'guest', -6, 50, { behavior: 'wander' }),  // 南岸·肉铺旁
+  n('', '周五郎', 'porter', 22, 16),      // 码头
+  n('', '郑三嫂', 'cook', -7, 45),        // 南岸·桥南
+  n('', '吴秀才', 'scholar', 3, 20, { behavior: 'wander' }),  // 桥北头
   n('', '冯四哥', 'guest', 2, 0, { behavior: 'wander' }),
   n('', '陈婆婆', 'woman', -2, 2),
   n('', '褚小七', 'child', -2, -4, { behavior: 'wander' }),
@@ -74,13 +74,13 @@ export const NPC_DEFS = [
   n('', '华小哥', 'child', -3, 80),
   n('', '常掌柜', 'guest', 2, 90),
   n('', '时人儿', 'guest', 4, 100),
-  n('', '侯农夫', 'farmer', 10, -80),
-  n('', '林牧童', 'child', -10, -78, { behavior: 'wander' }),
+  n('', '侯农夫', 'farmer', 10, 72),
+  n('', '林牧童', 'child', -10, 68, { behavior: 'wander' }),
   ...SHOPKEEPER_DEFS,
 
   // ---- P2-2 夜巡人（入夜后出现在街上） ----
   n('gengfu', '巡夜老王', 'watcher', -3, 10, { behavior: 'wander', heading: Math.PI }),
-  n('xunye', '夜巡张捕快', 'watcher', 4, -20, { behavior: 'wander' }),
+  n('xunye', '夜巡张捕快', 'watcher', -16, 12, { behavior: 'wander' }),
 ];
 
 export const NPC_COUNT = NPC_DEFS.length;
