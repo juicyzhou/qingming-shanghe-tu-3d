@@ -511,6 +511,7 @@ export const FOG_UNIFORMS = {
   uFogColor: { value: new THREE.Color(__dusk ? '#e2cfa8' : '#e7d8b4') },
   uFogNear: { value: 55 },
   uFogFar: { value: 200 },
+  uFogScale: { value: 1 }, // 雾强度系数（远山等背景层调低以保持可见）
 };
 
 const toonVert = /* glsl */`
@@ -542,6 +543,7 @@ uniform float uUseAlpha;
 uniform vec3 uFogColor;
 uniform float uFogNear;
 uniform float uFogFar;
+uniform float uFogScale;
 varying vec3 vNormal;
 varying vec3 vView;
 varying vec2 vUv;
@@ -571,7 +573,7 @@ void main() {
   col *= base;
   // 柔和高光压缩（防过曝发白，同时保持暖色饱和）
   col = 1.0 - exp(-col * 1.5);
-  float fogFactor = smoothstep(uFogNear, uFogFar, max(vFogDepth, 0.0));
+  float fogFactor = smoothstep(uFogNear, uFogFar, max(vFogDepth, 0.0)) * uFogScale;
   col = mix(col, uFogColor, clamp(fogFactor, 0.0, 1.0));
   gl_FragColor = vec4(col, alpha);
 }`;
@@ -583,7 +585,7 @@ const WHITE_TEX = new THREE.CanvasTexture((() => {
 })());
 
 // 每个材质共享同一份光照/雾 uniforms 的 value 对象 → 全局调光一次即全部生效
-export function toon({ color = 0xffffff, map = null, transparent = false, opacity = 1, side = null, boost = 0, useAlpha = false } = {}) {
+export function toon({ color = 0xffffff, map = null, transparent = false, opacity = 1, side = null, boost = 0, useAlpha = false, fogScale = 1 } = {}) {
   const uniforms = Object.assign({}, {
     uColor: { value: new THREE.Color(color) },
     uMap: { value: map || WHITE_TEX },
@@ -591,6 +593,7 @@ export function toon({ color = 0xffffff, map = null, transparent = false, opacit
   if (boost > 0) uniforms.uBoost = { value: boost };      // 室内材质独立环境光增益
   if (transparent) uniforms.uOpacity = { value: opacity }; // 透明材质独立透明度
   if (useAlpha) uniforms.uUseAlpha = { value: 1 };         // 卷轴等镂空
+  if (fogScale !== 1) uniforms.uFogScale = { value: fogScale }; // 远山等背景层减雾
   const mat = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: toonVert,

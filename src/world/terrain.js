@@ -52,29 +52,30 @@ export function buildTerrain(scene) {
   scene.add(group);
 }
 
-// 远山：北南两列黛青山脊，远景入画
+// 远山：北南两列黛青山脊，远景入画（单位圆锥按轴向缩放，山脊长轴沿 x、厚度沿 z）
+// fogScale 减雾：远山作为背景层，不受远处雾过度淹没，保持"青山入画"可见
 export function buildMountains(scene) {
   const g = new THREE.Group();
-  // 远山色（青灰，随雾渐远）
-  const mk = (color) => toon({ color });
-  const ridge = (x, z, w, h) => {
-    const m = new THREE.Mesh(flat(new THREE.ConeGeometry(w, h, 14, 1)), mk('#8a967a'));
-    m.position.set(x, h / 2 - 0.5, z);
-    m.scale.z = 3.2; // 拉成山脊
-    g.add(m);
+  const ridge = (group, x, z, lenX, thickZ, h, color) => {
+    const m = new THREE.Mesh(flat(new THREE.ConeGeometry(1, 1, 14, 1)), toon({ color, fogScale: 0.4 }));
+    m.scale.set(lenX, h, thickZ);          // x=山脊长度, y=高度, z=厚度
+    m.position.set(x, h / 2 - 0.5, z);     // 底座贴地
+    group.add(m);
   };
-  // 北山
-  for (const [x, z, w, h] of [[-95, -135, 46, 34], [-40, -142, 60, 40], [35, -138, 52, 36], [95, -133, 44, 30]]) ridge(x, z, w, h);
-  // 南山
-  for (const [x, z, w, h] of [[-90, 135, 50, 38], [-30, 142, 62, 42], [40, 136, 50, 34], [95, 140, 44, 30]]) ridge(x, z, w, h);
-  // 更远的淡山（第二层，更雾）
+  // 北山（近层，位于游玩区以北；黛青色，远山如黛）
+  ridge(g, -95, -118, 110, 13, 34, '#5f786a');
+  ridge(g, -25, -126, 130, 15, 42, '#5f786a');
+  ridge(g, 65, -120, 105, 13, 36, '#5f786a');
+  // 南山（近层，位于游玩区以南）
+  ridge(g, -95, 132, 115, 13, 36, '#5f786a');
+  ridge(g, -20, 140, 130, 15, 42, '#5f786a');
+  ridge(g, 70, 134, 105, 13, 34, '#5f786a');
+  // 更远的淡山（第二层，更淡更灰，层次在雾里）
   const far = new THREE.Group();
-  for (const [x, z, w, h] of [[-70, -175, 80, 34], [60, -178, 90, 40], [-60, 178, 90, 38], [70, 175, 80, 32]]) {
-    const m = new THREE.Mesh(flat(new THREE.ConeGeometry(w, h, 12, 1)), toon({ color: '#a4a887' }));
-    m.position.set(x, h / 2 - 0.5, z);
-    m.scale.z = 4;
-    far.add(m);
-  }
+  ridge(far, -70, -158, 170, 22, 40, '#8a9c90');
+  ridge(far, 55, -164, 190, 24, 44, '#8a9c90');
+  ridge(far, -65, 170, 175, 22, 42, '#8a9c90');
+  ridge(far, 60, 176, 190, 24, 44, '#8a9c90');
   scene.add(g);
   scene.add(far);
 }
